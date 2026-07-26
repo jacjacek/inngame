@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { clubs, trainers } from '@/data/models';
-import { AppButton, Divider, ModalHeader, Pill, SectionTitle, selectionHaptic, successHaptic, ToggleRow } from '@/components/ui';
+import { AppButton, Divider, ModalHeader, Pill, SectionTitle, selectionHaptic, successHaptic, ToggleRow, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
@@ -16,7 +16,7 @@ function sameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
-export default function BookingScreen() {
+function BookingScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; suggestedDate?: string }>();
   const store = useAppStore();
@@ -208,6 +208,8 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
+
+export default withSheetPage(BookingScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Divider, ModalHeader, selectionHaptic } from '@/components/ui';
+import { Divider, ModalHeader, selectionHaptic, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
@@ -13,7 +13,7 @@ const sports = [
   { name: 'Padel', icon: 'tennisball-outline' as const, color: theme.colors.sky },
 ];
 
-export default function SportPickerScreen() {
+function SportPickerScreen() {
   const router = useRouter();
   const store = useAppStore();
   return (
@@ -46,6 +46,8 @@ export default function SportPickerScreen() {
     </View>
   );
 }
+
+export default withSheetPage(SportPickerScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

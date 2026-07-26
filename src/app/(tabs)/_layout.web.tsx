@@ -164,6 +164,9 @@ const styles = StyleSheet.create({
   tabSlot: {
     flex: 1,
     minHeight: 0,
+    minWidth: 0,
+    position: 'relative',
+    overflow: 'hidden',
     backgroundColor: theme.colors.background,
   },
   tabList: {

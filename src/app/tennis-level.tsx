@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, ModalHeader, selectionHaptic } from '@/components/ui';
+import { AppButton, ModalHeader, selectionHaptic, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
@@ -20,7 +20,7 @@ const levels = [
   ['5.0+', 'Wysoki poziom turniejowy', 'Zaawansowana technika i regularne starty.'],
 ] as const;
 
-export default function TennisLevelScreen() {
+function TennisLevelScreen() {
   const router = useRouter();
   const store = useAppStore();
   const [selected, setSelected] = useState(store.tennisLevel);
@@ -51,6 +51,8 @@ export default function TennisLevelScreen() {
     </View>
   );
 }
+
+export default withSheetPage(TennisLevelScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

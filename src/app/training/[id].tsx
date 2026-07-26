@@ -5,13 +5,13 @@ import React from 'react';
 import { Alert, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, Divider, endTime, formatDate, formatTime, InfoRow, ModalHeader, selectionHaptic } from '@/components/ui';
+import { AppButton, Divider, endTime, formatDate, formatTime, InfoRow, ModalHeader, selectionHaptic, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
 const blueCourt = require('@/assets/mymovio/blue-court.png');
 
-export default function TrainingDetailScreen() {
+function TrainingDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
@@ -146,6 +146,8 @@ function Fact({ icon, label, value }: { icon: React.ComponentProps<typeof Ionico
     </View>
   );
 }
+
+export default withSheetPage(TrainingDetailScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

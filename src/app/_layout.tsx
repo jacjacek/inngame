@@ -18,6 +18,13 @@ const navigationTheme = {
   },
 };
 
+const sheetOptions = {
+  presentation: 'formSheet' as const,
+  sheetAllowedDetents: [0.75],
+  sheetInitialDetentIndex: 0,
+  sheetGrabberVisible: true,
+};
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -31,33 +38,17 @@ export default function RootLayout() {
               animation: 'default',
             }}>
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="booking" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-            <Stack.Screen
-              name="training/[id]"
-              options={{
-                presentation: 'formSheet',
-                sheetAllowedDetents: [0.75],
-                sheetInitialDetentIndex: 0,
-                sheetGrabberVisible: true,
-              }}
-            />
-            <Stack.Screen
-              name="package/[id]"
-              options={{
-                presentation: 'formSheet',
-                sheetAllowedDetents: [0.75],
-                sheetInitialDetentIndex: 0,
-                sheetGrabberVisible: true,
-              }}
-            />
-            <Stack.Screen name="top-up/[id]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="trainers" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="trainer/[id]" />
-            <Stack.Screen name="clubs" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="profile-form" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="sport-picker" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="tennis-level" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="training-note" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="booking" options={sheetOptions} />
+            <Stack.Screen name="training/[id]" options={sheetOptions} />
+            <Stack.Screen name="package/[id]" options={sheetOptions} />
+            <Stack.Screen name="top-up/[id]" options={sheetOptions} />
+            <Stack.Screen name="trainers" options={sheetOptions} />
+            <Stack.Screen name="trainer/[id]" options={sheetOptions} />
+            <Stack.Screen name="clubs" options={sheetOptions} />
+            <Stack.Screen name="profile-form" options={sheetOptions} />
+            <Stack.Screen name="sport-picker" options={sheetOptions} />
+            <Stack.Screen name="tennis-level" options={sheetOptions} />
+            <Stack.Screen name="training-note" options={sheetOptions} />
           </Stack>
         </ThemeProvider>
       </AppStoreProvider>

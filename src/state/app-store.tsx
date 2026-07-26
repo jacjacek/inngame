@@ -65,6 +65,12 @@ const initialState: PersistedState = {
   trainingNote: 'Serwis: wyższy podrzut piłki. Return z bekhendu i wcześniejszy split step.',
 };
 
+function mergeSeedMessages(messages: ChatMessage[] | undefined) {
+  if (!messages) return initialMessages;
+  const knownIds = new Set(messages.map((message) => message.id));
+  return [...messages, ...initialMessages.filter((message) => !knownIds.has(message.id))];
+}
+
 const AppStoreContext = createContext<AppStore | null>(null);
 
 export function AppStoreProvider({ children }: PropsWithChildren) {
@@ -76,7 +82,11 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       .then((value) => {
         if (!value) return;
         const restored = JSON.parse(value) as Partial<PersistedState>;
-        setState((current) => ({ ...current, ...restored }));
+        setState((current) => ({
+          ...current,
+          ...restored,
+          messages: mergeSeedMessages(restored.messages),
+        }));
       })
       .catch(() => undefined)
       .finally(() => setHydrated(true));

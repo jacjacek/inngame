@@ -4,10 +4,10 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { clubs } from '@/data/models';
-import { AppButton, ModalHeader } from '@/components/ui';
+import { AppButton, ModalHeader, withSheetPage } from '@/components/ui';
 import { theme } from '@/theme';
 
-export default function ClubsScreen() {
+function ClubsScreen() {
   const router = useRouter();
   return (
     <View style={styles.page}>
@@ -48,6 +48,8 @@ export default function ClubsScreen() {
 function Fact({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string }) {
   return <View style={styles.fact}><Ionicons name={icon} size={14} color={theme.colors.secondaryText} /><Text style={styles.factText}>{text}</Text></View>;
 }
+
+export default withSheetPage(ClubsScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

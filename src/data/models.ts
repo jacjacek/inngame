@@ -304,14 +304,34 @@ export const samplePackages: PurchasedPackage[] = [
 export const conversations: ChatConversation[] = [
   { id: 'bartek', name: 'Bartek Nowak', initials: 'BN', role: 'Trener', preview: 'Jasne, widzimy się jutro na Deski.', time: '18:42', unread: 2, trainingId: 'deski-next-training' },
   { id: 'team', name: 'Michał i Piotr', initials: 'MP', role: 'Grupa treningowa', preview: 'Piotr potwierdził godzinę 10:00.', time: '16:18', unread: 0, trainingId: 'deski-next-training' },
+  { id: 'ola', name: 'Ola Szymańska', initials: 'OS', role: 'Partnerka deblowa', preview: 'Mogę w czwartek po 18, pasuje Ci?', time: '14:06', unread: 1, trainingId: 'mery-debel' },
   { id: 'anna', name: 'Anna Kowalska', initials: 'AK', role: 'Trenerka', preview: 'Podeślę Ci ćwiczenie na serwis.', time: 'Wczoraj', unread: 0, trainingId: 'warszawianka-serwis' },
+  { id: 'deski', name: 'Korty Deski', initials: 'KD', role: 'Recepcja klubu', preview: 'Rezerwacja Kortu 2 została potwierdzona.', time: 'Wczoraj', unread: 0, trainingId: 'deski-next-training' },
+  { id: 'michal', name: 'Michał Zieliński', initials: 'MZ', role: 'Trener przygotowania', preview: 'Mam dla Ciebie krótki blok na mobilność.', time: 'Pon.', unread: 0 },
+  { id: 'liga', name: 'Liga klubowa', initials: 'LK', role: 'Organizator', preview: 'Drabinka na sobotę jest już gotowa.', time: 'Pt.', unread: 0, trainingId: 'legia-liga' },
 ];
 
 export const initialMessages: ChatMessage[] = [
   { id: 'm1', conversationId: 'bartek', author: 'them', body: 'Cześć! Jutro skupimy się na serwisie i pierwszej piłce po returnie.', sentAt: ago(1) },
   { id: 'm2', conversationId: 'bartek', author: 'me', body: 'Super. Czy mogę przyjść 10 minut wcześniej na rozgrzewkę?', sentAt: ago(1) },
   { id: 'm3', conversationId: 'bartek', author: 'them', body: 'Jasne, widzimy się jutro na Deski.', sentAt: new Date().toISOString() },
-  { id: 'm4', conversationId: 'team', author: 'them', body: 'Piotr potwierdził godzinę 10:00.', sentAt: new Date().toISOString() },
-  { id: 'm5', conversationId: 'anna', author: 'them', body: 'Podeślę Ci ćwiczenie na serwis po treningu.', sentAt: ago(1) },
+  { id: 'm4', conversationId: 'team', author: 'them', body: 'Ja będę na miejscu około 9:45, wezmę nowe piłki.', sentAt: ago(1) },
+  { id: 'm5', conversationId: 'team', author: 'me', body: 'Świetnie, ja zarezerwowałem już Kort 2.', sentAt: ago(1) },
+  { id: 'm6', conversationId: 'team', author: 'them', body: 'Piotr potwierdził godzinę 10:00.', sentAt: new Date().toISOString() },
+  { id: 'm7', conversationId: 'ola', author: 'them', body: 'Hej! Widziałam, że szukasz partnera do debla.', sentAt: ago(1) },
+  { id: 'm8', conversationId: 'ola', author: 'me', body: 'Tak, chętnie zagram spokojny trening z rotacją przy siatce.', sentAt: ago(1) },
+  { id: 'm9', conversationId: 'ola', author: 'them', body: 'Mogę w czwartek po 18, pasuje Ci?', sentAt: new Date().toISOString() },
+  { id: 'm10', conversationId: 'anna', author: 'them', body: 'Po ostatnim treningu dobrze wyglądał rytm serwisu.', sentAt: ago(2) },
+  { id: 'm11', conversationId: 'anna', author: 'me', body: 'Dziękuję! Nad podrzutem jeszcze popracuję.', sentAt: ago(2) },
+  { id: 'm12', conversationId: 'anna', author: 'them', body: 'Podeślę Ci ćwiczenie na serwis po treningu.', sentAt: ago(1) },
+  { id: 'm13', conversationId: 'deski', author: 'them', body: 'Rezerwacja Kortu 2 na jutro, 10:00–12:00 została potwierdzona.', sentAt: ago(1) },
+  { id: 'm14', conversationId: 'deski', author: 'me', body: 'Czy szatnia będzie dostępna od 9:40?', sentAt: ago(1) },
+  { id: 'm15', conversationId: 'deski', author: 'them', body: 'Tak, zapraszamy od 9:30. Recepcja przygotuje wejście.', sentAt: ago(1) },
+  { id: 'm16', conversationId: 'michal', author: 'them', body: 'Przed kolejnym meczem zrób 8 minut mobilności bioder i skokowych.', sentAt: ago(4) },
+  { id: 'm17', conversationId: 'michal', author: 'me', body: 'Jasne, możesz podesłać kolejność ćwiczeń?', sentAt: ago(4) },
+  { id: 'm18', conversationId: 'michal', author: 'them', body: 'Mam dla Ciebie krótki blok na mobilność. Wyślę go dziś wieczorem.', sentAt: ago(4) },
+  { id: 'm19', conversationId: 'liga', author: 'them', body: 'Twoje pierwsze spotkanie: sobota, 11:00, Kort 1.', sentAt: ago(6) },
+  { id: 'm20', conversationId: 'liga', author: 'me', body: 'Dzięki, potwierdzam obecność.', sentAt: ago(6) },
+  { id: 'm21', conversationId: 'liga', author: 'them', body: 'Drabinka na sobotę jest już gotowa.', sentAt: ago(1) },
 ];
 

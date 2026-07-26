@@ -3,11 +3,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
+  Image,
   ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -50,8 +52,10 @@ export default function HomeScreen() {
 
 function FreshDashboard() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { profileCompleted, selectedTrainerId, completedSteps } = useAppStore();
   const progress = completedSteps / 3;
+  const heroHeight = width < 768 ? Math.min(width * 1.5, 580) : 390;
 
   const steps = [
     {
@@ -83,7 +87,8 @@ function FreshDashboard() {
       contentContainerStyle={styles.freshContent}
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}>
-      <ImageBackground source={courtImage} style={styles.freshHero} resizeMode="cover">
+      <View style={[styles.freshHero, { height: heroHeight }]}>
+        <Image source={courtImage} resizeMode="contain" style={styles.freshHeroImage} />
         <LinearGradient colors={['rgba(2,10,5,0.05)', 'rgba(17,18,15,0.18)', theme.colors.background]} style={StyleSheet.absoluteFill} />
         <SafeAreaView edges={['top']} style={styles.freshHeroContent}>
           <View style={styles.welcomePill}>
@@ -93,7 +98,7 @@ function FreshDashboard() {
           <Text style={styles.freshTitle}>Twój pierwszy trening{'\n'}zaczyna się tutaj</Text>
           <Text style={styles.freshSubtitle}>Przejdź 3 krótkie kroki, a dopasujemy trenera i termin do Ciebie.</Text>
         </SafeAreaView>
-      </ImageBackground>
+      </View>
 
       <View style={styles.freshCards}>
         <View style={styles.checklist}>
@@ -415,7 +420,8 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.72 },
   locked: { opacity: 0.38 },
   freshContent: { paddingBottom: 40 },
-  freshHero: { height: 390 },
+  freshHero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', justifyContent: 'flex-end', backgroundColor: theme.colors.background },
+  freshHeroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   freshHeroContent: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 22, paddingBottom: 55 },
   welcomePill: { alignSelf: 'flex-start', flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 18 },
   welcomeText: { color: theme.colors.lime, fontSize: 11.5, fontWeight: '600' },

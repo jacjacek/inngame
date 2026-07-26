@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BackHandler,
   Image,
@@ -26,13 +26,17 @@ export default function ChatScreen() {
   const router = useRouter();
   const store = useAppStore();
   const [selectedId, setSelectedId] = useState(conversations[0].id);
-  const [showList, setShowList] = useState(false);
+  const [showList, setShowList] = useState(true);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   const conversation = conversations.find((item) => item.id === selectedId) ?? conversations[0];
   const messages = store.messages.filter((item) => item.conversationId === selectedId);
+
+  useFocusEffect(useCallback(() => {
+    setShowList(true);
+  }, []));
 
   useEffect(() => {
     if (Platform.OS !== 'android' || showList) return;

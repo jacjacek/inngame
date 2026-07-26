@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, ModalHeader, Pill, SectionTitle, selectionHaptic, successHaptic } from '@/components/ui';
+import { AppButton, ModalHeader, Pill, SectionTitle, selectionHaptic, successHaptic, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
@@ -14,7 +14,7 @@ const offers = [
   { hours: 20, discount: 10 },
 ];
 
-export default function TopUpScreen() {
+function TopUpScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
@@ -137,6 +137,8 @@ function ConfirmationRow({ label, value, accent }: { label: string; value: strin
     </View>
   );
 }
+
+export default withSheetPage(TopUpScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

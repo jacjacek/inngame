@@ -5,10 +5,10 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 
 import { trainers } from '@/data/models';
 import { trainerPhotos } from '@/data/trainer-media';
-import { ModalHeader, Pill, selectionHaptic } from '@/components/ui';
+import { ModalHeader, Pill, selectionHaptic, withSheetPage } from '@/components/ui';
 import { theme } from '@/theme';
 
-export default function TrainersScreen() {
+function TrainersScreen() {
   const router = useRouter();
   const { purpose } = useLocalSearchParams<{ purpose?: string }>();
   const [query, setQuery] = useState('');
@@ -82,6 +82,8 @@ export default function TrainersScreen() {
 function Stat({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string }) {
   return <View style={styles.stat}><Ionicons name={icon} size={13} color={theme.colors.secondaryText} /><Text style={styles.statText}>{text}</Text></View>;
 }
+
+export default withSheetPage(TrainersScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

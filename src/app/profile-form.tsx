@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, Field, ModalHeader, Pill, successHaptic } from '@/components/ui';
+import { AppButton, Field, ModalHeader, Pill, successHaptic, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
 const levels = ['Początkujący', 'Średnio zaawansowany', 'Zaawansowany'];
 
-export default function ProfileFormScreen() {
+function ProfileFormScreen() {
   const router = useRouter();
   const store = useAppStore();
   const [name, setName] = useState(store.profile.name);
@@ -50,6 +50,8 @@ export default function ProfileFormScreen() {
     </View>
   );
 }
+
+export default withSheetPage(ProfileFormScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

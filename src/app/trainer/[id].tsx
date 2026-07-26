@@ -5,12 +5,11 @@ import { Image, Linking, ScrollView, Share, StyleSheet, Text, View } from 'react
 
 import { trainers } from '@/data/models';
 import { trainerPhotos } from '@/data/trainer-media';
-import { AppButton, Divider, IconButton, InfoRow } from '@/components/ui';
+import { AppButton, Divider, IconButton, InfoRow, ModalHeader, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function TrainerProfileScreen() {
+function TrainerProfileScreen() {
   const router = useRouter();
   const { id, purpose } = useLocalSearchParams<{ id: string; purpose?: string }>();
   const store = useAppStore();
@@ -24,12 +23,11 @@ export default function TrainerProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.page} edges={['top', 'left', 'right']}>
-      <View style={styles.toolbar}>
-        <IconButton icon="chevron-back" accessibilityLabel="Wróć" onPress={() => router.back()} />
-        <Text style={styles.toolbarTitle}>Profil</Text>
-        <IconButton icon="share-outline" accessibilityLabel="Udostępnij profil" onPress={() => Share.share({ message: `${trainer.name} — trener tenisa w MyMovio` })} />
-      </View>
+    <View style={styles.page}>
+      <ModalHeader
+        title="Profil trenera"
+        trailing={<IconButton icon="share-outline" accessibilityLabel="Udostępnij profil" onPress={() => Share.share({ message: `${trainer.name} — trener tenisa w MyMovio` })} />}
+      />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <View style={styles.avatar}>
@@ -84,7 +82,7 @@ export default function TrainerProfileScreen() {
           }} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -92,11 +90,12 @@ function Metric({ value, label }: { value: string; label: string }) {
   return <View style={styles.metric}><Text style={styles.metricValue}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>;
 }
 
+export default withSheetPage(TrainerProfileScreen);
+
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
-  toolbar: { height: 56, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
-  toolbarTitle: { color: theme.colors.text, fontSize: 17, fontWeight: '600' },
+
   content: { padding: 16, gap: 20, paddingBottom: 42 },
   hero: { alignItems: 'center', paddingVertical: 10 },
   avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: '#343630', alignItems: 'center', justifyContent: 'center' },

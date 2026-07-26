@@ -86,18 +86,34 @@ export function Header({
   );
 }
 
-export function ModalHeader({ title, doneLabel, onDone }: { title: string; doneLabel?: string; onDone?: () => void }) {
+export function SheetPage({ children }: PropsWithChildren) {
+  if (Platform.OS !== 'web') return <>{children}</>;
+
+  return (
+    <View style={styles.sheetBackdrop}>
+      <View style={styles.sheetPanel}>{children}</View>
+    </View>
+  );
+}
+
+export function withSheetPage(Component: React.ComponentType) {
+  return function SheetRoute() {
+    return <SheetPage><Component /></SheetPage>;
+  };
+}
+
+export function ModalHeader({ title, doneLabel, onDone, trailing }: { title: string; doneLabel?: string; onDone?: () => void; trailing?: ReactNode }) {
   const router = useRouter();
   return (
     <SafeAreaView edges={['top']} style={styles.modalHeaderSafe}>
       <View style={styles.modalHeader}>
-        <IconButton icon={Platform.OS === 'ios' ? 'close' : 'arrow-back'} accessibilityLabel="Zamknij" onPress={() => router.back()} />
+        <IconButton icon="close" accessibilityLabel="Zamknij" onPress={() => router.back()} />
         <Text style={styles.modalTitle}>{title}</Text>
         {doneLabel && onDone ? (
           <Pressable onPress={onDone} hitSlop={12}>
             <Text style={styles.doneText}>{doneLabel}</Text>
           </Pressable>
-        ) : <View style={styles.headerSpacer} />}
+        ) : trailing ?? <View style={styles.headerSpacer} />}
       </View>
     </SafeAreaView>
   );
@@ -338,6 +354,8 @@ const styles = StyleSheet.create({
   headerTitle: { color: theme.colors.text, fontSize: 32, fontWeight: '700', letterSpacing: -0.8 },
   headerSubtitle: { color: theme.colors.secondaryText, fontSize: 14, marginTop: 3 },
   modalHeaderSafe: { backgroundColor: theme.colors.background },
+  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheetPanel: { height: '75%', maxHeight: '75%', overflow: 'hidden', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: theme.colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border },
   modalHeader: { height: 58, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   modalTitle: { color: theme.colors.text, fontSize: 17, fontWeight: '600' },
   doneText: { color: theme.colors.lime, fontSize: 16, fontWeight: '600' },

@@ -3,11 +3,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { AppButton, Card, Divider, formatDate, InfoRow, ModalHeader } from '@/components/ui';
+import { AppButton, Card, Divider, formatDate, InfoRow, ModalHeader, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
-export default function PackageDetailsScreen() {
+function PackageDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
@@ -100,6 +100,8 @@ function Metric({ icon, value, label }: { icon: React.ComponentProps<typeof Ioni
     </View>
   );
 }
+
+export default withSheetPage(PackageDetailsScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },

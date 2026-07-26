@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, Field, ModalHeader } from '@/components/ui';
+import { AppButton, Field, ModalHeader, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
-export default function TrainingNoteScreen() {
+function TrainingNoteScreen() {
   const router = useRouter();
   const store = useAppStore();
   const [note, setNote] = useState(store.trainingNote);
@@ -29,6 +29,8 @@ export default function TrainingNoteScreen() {
     </View>
   );
 }
+
+export default withSheetPage(TrainingNoteScreen);
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
