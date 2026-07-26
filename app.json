@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "MyMovio",
+    "slug": "mymovio-expo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/mymovio/icon.png",
+    "scheme": "mymovio",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "bundleIdentifier": "com.mymovio.app",
+      "supportsTablet": true,
+      "icon": "./assets/mymovio/icon.png"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#11120F",
+        "foregroundImage": "./assets/mymovio/icon.png",
+        "monochromeImage": "./assets/mymovio/icon.png"
+      },
+      "package": "com.mymovio.app",
+      "predictiveBackGestureEnabled": true,
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#11120F",
+          "image": "./assets/mymovio/icon.png",
+          "imageWidth": 112
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
