@@ -54,7 +54,7 @@ function FreshDashboard() {
   const { width } = useWindowDimensions();
   const { profileCompleted, selectedTrainerId, completedSteps } = useAppStore();
   const progress = completedSteps / 3;
-  const heroHeight = width < 768 ? Math.min(width * 1.5, 580) : 390;
+  const heroHeight = width < 768 ? Math.min(width * 1.18, 460) : 390;
 
   const steps = [
     {
@@ -88,7 +88,11 @@ function FreshDashboard() {
       showsVerticalScrollIndicator={false}>
       <View style={[styles.freshHero, { height: heroHeight }]}>
         <Image source={courtImage} resizeMode="contain" style={styles.freshHeroImage} />
-        <LinearGradient colors={['rgba(2,10,5,0.05)', 'rgba(17,18,15,0.18)', theme.colors.background]} style={StyleSheet.absoluteFill} />
+        <LinearGradient
+          colors={['rgba(17,18,15,0.28)', 'rgba(17,18,15,0.52)', theme.colors.background]}
+          locations={[0, 0.54, 1]}
+          style={StyleSheet.absoluteFill}
+        />
         <SafeAreaView edges={['top']} style={styles.freshHeroContent}>
           <View style={styles.welcomePill}>
             <Ionicons name="tennisball" size={15} color={theme.colors.lime} />
@@ -164,7 +168,7 @@ function TrainingDashboard() {
     [referenceTime, trainings],
   );
   const next = futureTrainings[0] ?? trainings[0];
-  const heroHeight = width < 768 ? Math.min(width * 1.5, 580) : 390;
+  const heroHeight = width < 768 ? Math.min(width * 1.18, 460) : 390;
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -186,7 +190,11 @@ function TrainingDashboard() {
       showsVerticalScrollIndicator={false}>
       <Pressable onPress={() => openTraining(next)} style={({ pressed }) => [styles.hero, { height: heroHeight }, pressed && styles.pressed]}>
         <Image source={courtImage} resizeMode="contain" style={styles.heroImage} />
-          <LinearGradient colors={['rgba(3,10,6,0.05)', 'rgba(3,10,6,0.25)', theme.colors.background]} style={StyleSheet.absoluteFill} />
+          <LinearGradient
+            colors={['rgba(17,18,15,0.3)', 'rgba(17,18,15,0.58)', theme.colors.background]}
+            locations={[0, 0.56, 1]}
+            style={StyleSheet.absoluteFill}
+          />
           <SafeAreaView edges={['top']} style={styles.heroContent}>
             <Text style={styles.heroEyebrow}>Następny trening</Text>
             <Text style={styles.heroTime}>{formatTime(next.start)}</Text>
@@ -421,8 +429,8 @@ const styles = StyleSheet.create({
   locked: { opacity: 0.38 },
   freshContent: { paddingBottom: 40 },
   freshHero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', justifyContent: 'flex-end', backgroundColor: theme.colors.background },
-  freshHeroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
-  freshHeroContent: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 22, paddingBottom: 55 },
+  freshHeroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.58, transform: [{ scale: 0.92 }] },
+  freshHeroContent: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 22, paddingBottom: 36 },
   welcomePill: { alignSelf: 'flex-start', flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 18 },
   welcomeText: { color: theme.colors.lime, fontSize: 11.5, fontWeight: '600' },
   freshTitle: { color: theme.colors.text, fontSize: 37, fontWeight: '700', letterSpacing: -1.2, lineHeight: 42 },
@@ -448,10 +456,10 @@ const styles = StyleSheet.create({
   reassuranceText: { color: theme.colors.secondaryText, fontSize: 13, lineHeight: 18, marginTop: 4 },
   dashboardContent: { paddingBottom: 30 },
   hero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: theme.colors.background },
-  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
-  heroContent: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 45, paddingHorizontal: 20 },
+  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.58, transform: [{ scale: 0.92 }] },
+  heroContent: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 34, paddingHorizontal: 20 },
   heroEyebrow: { color: 'rgba(255,255,255,0.68)', fontSize: 10.5, fontWeight: '500' },
-  heroTime: { color: theme.colors.text, fontSize: 67, fontWeight: '200', letterSpacing: -3.6, marginTop: 9 },
+  heroTime: { color: theme.colors.text, fontSize: 58, fontWeight: '200', letterSpacing: -3.1, marginTop: 7 },
   heroTitle: { color: theme.colors.text, fontSize: 19, fontWeight: '600', marginTop: 3 },
   heroMeta: { color: theme.colors.secondaryText, fontSize: 13, marginTop: 6 },
   durationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
