@@ -29,13 +29,20 @@ export default function ChatScreen() {
   const [showList, setShowList] = useState(true);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState('');
+  const [composerHeight, setComposerHeight] = useState(38);
+  const [showComposerActions, setShowComposerActions] = useState(false);
+  const [referenceTime] = useState(() => new Date().getTime());
   const scrollRef = useRef<ScrollView>(null);
 
   const conversation = conversations.find((item) => item.id === selectedId) ?? conversations[0];
   const messages = store.messages.filter((item) => item.conversationId === selectedId);
+  const nearestTraining = [...store.trainings]
+    .filter((item) => item.role === 'player' && new Date(item.start).getTime() + item.durationMinutes * 60_000 >= referenceTime)
+    .sort((a, b) => a.start.localeCompare(b.start))[0];
 
   useFocusEffect(useCallback(() => {
     setShowList(true);
+    setShowComposerActions(false);
   }, []));
 
   useEffect(() => {
@@ -114,6 +121,19 @@ export default function ChatScreen() {
     selectionHaptic();
     store.sendMessage(selectedId, body);
     setDraft('');
+    setComposerHeight(38);
+  };
+
+  const openComposerAction = (action: 'booking' | 'note' | 'edit') => {
+    selectionHaptic();
+    setShowComposerActions(false);
+    if (action === 'booking') {
+      router.push('/booking');
+    } else if (action === 'note') {
+      router.push('/training-note');
+    } else if (nearestTraining) {
+      router.push({ pathname: '/booking', params: { id: nearestTraining.id } });
+    }
   };
 
   return (
@@ -136,6 +156,7 @@ export default function ChatScreen() {
           style={styles.flex}
           contentContainerStyle={styles.messages}
           keyboardDismissMode="interactive"
+          onScrollBeginDrag={() => setShowComposerActions(false)}
           showsVerticalScrollIndicator={false}>
           <Text style={styles.dateDivider}>Wczoraj</Text>
           {training ? (
@@ -174,23 +195,61 @@ export default function ChatScreen() {
           <Pressable onPress={() => router.push('/training-note')} style={styles.noteDock}>
             <Ionicons name="reader-outline" size={18} color={theme.colors.secondaryText} />
             <View style={styles.flex}>
-              <Text style={styles.noteDockLabel}>Notatka na trening</Text>
-              <Text numberOfLines={1} style={styles.noteDockText}>{store.trainingNote}</Text>
+              <Text style={styles.noteDockLabel}>Notatka po ostatnim treningu</Text>
+              <Text numberOfLines={1} style={styles.noteDockText}>{store.trainingNote || 'Dodaj krótkie podsumowanie treningu'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={15} color={theme.colors.tertiaryText} />
           </Pressable>
+          {showComposerActions ? (
+            <View style={styles.composerMenu}>
+              <ComposerAction
+                icon="calendar-outline"
+                title="Dodaj kolejny trening"
+                onPress={() => openComposerAction('booking')}
+              />
+              <View style={styles.composerMenuDivider} />
+              <ComposerAction
+                icon="document-text-outline"
+                title={store.trainingNote.trim() ? 'Edytuj notatkę po ostatnim treningu' : 'Dodaj notatkę po ostatnim treningu'}
+                onPress={() => openComposerAction('note')}
+              />
+              <View style={styles.composerMenuDivider} />
+              <ComposerAction
+                icon="create-outline"
+                title="Edytuj najbliższy trening"
+                disabled={!nearestTraining}
+                onPress={() => openComposerAction('edit')}
+              />
+            </View>
+          ) : null}
           <View style={styles.composer}>
-            <Pressable onPress={() => router.push('/booking')} style={styles.addButton}>
-              <Ionicons name="add" size={22} color={theme.colors.secondaryText} />
+            <Pressable
+              accessibilityLabel="Więcej opcji"
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showComposerActions }}
+              onPress={() => {
+                selectionHaptic();
+                setShowComposerActions((visible) => !visible);
+              }}
+              style={[styles.addButton, showComposerActions && styles.addButtonActive]}>
+              <Ionicons name={showComposerActions ? 'close' : 'add'} size={22} color={showComposerActions ? theme.colors.lime : theme.colors.secondaryText} />
             </Pressable>
             <TextInput
               value={draft}
-              onChangeText={setDraft}
+              onChangeText={(value) => {
+                setDraft(value);
+                if (!value) setComposerHeight(38);
+              }}
+              onContentSizeChange={({ nativeEvent }) => {
+                const nextHeight = draft ? Math.min(Math.max(nativeEvent.contentSize.height, 38), 96) : 38;
+                setComposerHeight(nextHeight);
+              }}
+              onFocus={() => setShowComposerActions(false)}
               placeholder="Wiadomość"
               placeholderTextColor={theme.colors.tertiaryText}
               selectionColor={theme.colors.lime}
               multiline
-              style={styles.composerInput}
+              style={[styles.composerInput, { height: composerHeight }]}
             />
             <Pressable
               disabled={!draft.trim()}
@@ -202,6 +261,35 @@ export default function ChatScreen() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function ComposerAction({
+  disabled,
+  icon,
+  onPress,
+  title,
+}: {
+  disabled?: boolean;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  onPress: () => void;
+  title: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.composerMenuAction,
+        pressed && !disabled && styles.composerMenuActionPressed,
+        disabled && styles.composerMenuActionDisabled,
+      ]}>
+      <View style={styles.composerMenuIcon}>
+        <Ionicons name={icon} size={18} color={disabled ? theme.colors.tertiaryText : theme.colors.lime} />
+      </View>
+      <Text style={[styles.composerMenuText, disabled && styles.composerMenuTextDisabled]}>{title}</Text>
+    </Pressable>
   );
 }
 
@@ -265,11 +353,36 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.divider,
     backgroundColor: theme.colors.surfaceSoft,
   },
-  noteDock: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 9 },
+  noteDock: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 9, marginBottom: 6 },
   noteDockLabel: { color: theme.colors.secondaryText, fontSize: 9.5, fontWeight: '500' },
   noteDockText: { color: theme.colors.secondaryText, fontSize: 11.5, marginTop: 2 },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   addButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  composerInput: { flex: 1, minHeight: 40, maxHeight: 110, borderRadius: 20, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 9, color: theme.colors.text, fontSize: 15, backgroundColor: theme.colors.surfaceElevated },
+  addButtonActive: { backgroundColor: 'rgba(199,225,46,0.1)' },
+  composerInput: { flex: 1, minHeight: 38, maxHeight: 96, borderRadius: 19, paddingHorizontal: 14, paddingTop: 8, paddingBottom: 8, color: theme.colors.text, fontSize: 15, lineHeight: 20, backgroundColor: theme.colors.surfaceElevated },
   sendButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: theme.colors.lime, alignItems: 'center', justifyContent: 'center' },
+  composerMenu: {
+    position: 'absolute',
+    left: 8,
+    bottom: 54,
+    width: 286,
+    zIndex: 20,
+    overflow: 'hidden',
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceElevated,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+  },
+  composerMenuAction: { minHeight: 48, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  composerMenuActionPressed: { backgroundColor: 'rgba(255,255,255,0.06)' },
+  composerMenuActionDisabled: { opacity: 0.45 },
+  composerMenuIcon: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(199,225,46,0.08)' },
+  composerMenuText: { flex: 1, color: theme.colors.text, fontSize: 13.5, fontWeight: '500' },
+  composerMenuTextDisabled: { color: theme.colors.tertiaryText },
+  composerMenuDivider: { height: StyleSheet.hairlineWidth, marginLeft: 50, backgroundColor: theme.colors.divider },
 });
