@@ -3,7 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+} from 'react-native-reanimated';
 
 import { PurchasedPackage, Training } from '@/data/models';
 import { useAppStore } from '@/state/app-store';
@@ -27,8 +34,37 @@ import {
   SectionTitle,
   selectionHaptic,
 } from '@/components/ui';
+import { MotionPressable } from '@/components/motion';
 
 const courtImage = require('@/assets/mymovio/wimbledon-court.png');
+const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
+
+function useHeroParallax() {
+  const scrollY = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+  const imageStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY: reduceMotion
+          ? 0
+          : interpolate(scrollY.value, [0, 180], [0, 10], Extrapolation.CLAMP),
+      },
+      { scale: 0.92 },
+    ],
+  }), [reduceMotion]);
+  const contentStyle = useAnimatedStyle(() => ({
+    transform: [{
+      translateY: reduceMotion
+        ? 0
+        : interpolate(scrollY.value, [0, 180], [0, -8], Extrapolation.CLAMP),
+    }],
+  }), [reduceMotion]);
+
+  return { contentStyle, imageStyle, onScroll };
+}
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -55,6 +91,7 @@ function FreshDashboard() {
   const { profileCompleted, selectedTrainerId, completedSteps } = useAppStore();
   const progress = completedSteps / 3;
   const heroHeight = width < 768 ? Math.min(width * 1.18, 460) : 390;
+  const heroMotion = useHeroParallax();
 
   const steps = [
     {
@@ -81,26 +118,28 @@ function FreshDashboard() {
   ];
 
   return (
-    <ScrollView
+    <Animated.ScrollView
       style={styles.page}
       contentContainerStyle={styles.freshContent}
       contentInsetAdjustmentBehavior="automatic"
+      onScroll={heroMotion.onScroll}
+      scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}>
       <View style={[styles.freshHero, { height: heroHeight }]}>
-        <Image source={courtImage} resizeMode="contain" style={styles.freshHeroImage} />
+        <Animated.Image source={courtImage} resizeMode="contain" style={[styles.freshHeroImage, heroMotion.imageStyle]} />
         <LinearGradient
           colors={['rgba(17,18,15,0.28)', 'rgba(17,18,15,0.52)', theme.colors.background]}
           locations={[0, 0.54, 1]}
           style={StyleSheet.absoluteFill}
         />
-        <SafeAreaView edges={['top']} style={styles.freshHeroContent}>
+        <AnimatedSafeAreaView edges={['top']} style={[styles.freshHeroContent, heroMotion.contentStyle]}>
           <View style={styles.welcomePill}>
             <Ionicons name="tennisball" size={15} color={theme.colors.lime} />
             <Text style={styles.welcomeText}>Witaj w MyMovio</Text>
           </View>
           <Text style={styles.freshTitle}>Twój pierwszy trening{'\n'}zaczyna się tutaj</Text>
           <Text style={styles.freshSubtitle}>Przejdź 3 krótkie kroki, a dopasujemy trenera i termin do Ciebie.</Text>
-        </SafeAreaView>
+        </AnimatedSafeAreaView>
       </View>
 
       <View style={styles.freshCards}>
@@ -116,13 +155,14 @@ function FreshDashboard() {
           <View style={styles.steps}>
             {steps.map((step, index) => (
               <View key={step.title}>
-                <Pressable
+                <MotionPressable
                   disabled={step.locked}
+                  pressedScale={0.985}
                   onPress={() => {
                     selectionHaptic();
                     step.onPress();
                   }}
-                  style={({ pressed }) => [styles.stepRow, pressed && styles.pressed, step.locked && styles.locked]}>
+                  style={[styles.stepRow, step.locked && styles.locked]}>
                   <View style={[styles.stepNumber, step.complete && styles.stepComplete]}>
                     {step.complete ? (
                       <Ionicons name="checkmark" size={17} color="#11120F" />
@@ -137,7 +177,7 @@ function FreshDashboard() {
                     <Text style={styles.stepSubtitle}>{step.subtitle}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={17} color={theme.colors.tertiaryText} />
-                </Pressable>
+                </MotionPressable>
                 {index < steps.length - 1 ? <View style={styles.stepDivider} /> : null}
               </View>
             ))}
@@ -152,7 +192,7 @@ function FreshDashboard() {
           </View>
         </View>
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 
@@ -169,6 +209,7 @@ function TrainingDashboard() {
   );
   const next = futureTrainings[0] ?? trainings[0];
   const heroHeight = width < 768 ? Math.min(width * 1.18, 460) : 390;
+  const heroMotion = useHeroParallax();
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -183,19 +224,21 @@ function TrainingDashboard() {
   };
 
   return (
-    <ScrollView
+    <Animated.ScrollView
       style={styles.page}
       contentContainerStyle={styles.dashboardContent}
       contentInsetAdjustmentBehavior="automatic"
+      onScroll={heroMotion.onScroll}
+      scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}>
-      <Pressable onPress={() => openTraining(next)} style={({ pressed }) => [styles.hero, { height: heroHeight }, pressed && styles.pressed]}>
-        <Image source={courtImage} resizeMode="contain" style={styles.heroImage} />
+      <MotionPressable onPress={() => openTraining(next)} pressedScale={0.995} style={[styles.hero, { height: heroHeight }]}>
+        <Animated.Image source={courtImage} resizeMode="contain" style={[styles.heroImage, heroMotion.imageStyle]} />
           <LinearGradient
             colors={['rgba(17,18,15,0.3)', 'rgba(17,18,15,0.58)', theme.colors.background]}
             locations={[0, 0.56, 1]}
             style={StyleSheet.absoluteFill}
           />
-          <SafeAreaView edges={['top']} style={styles.heroContent}>
+          <AnimatedSafeAreaView edges={['top']} style={[styles.heroContent, heroMotion.contentStyle]}>
             <Text style={styles.heroEyebrow}>Następny trening</Text>
             <Text style={styles.heroTime}>{formatTime(next.start)}</Text>
             <Text style={styles.heroTitle}>{next.title}</Text>
@@ -204,8 +247,8 @@ function TrainingDashboard() {
               <Ionicons name="time-outline" size={15} color={theme.colors.secondaryText} />
               <Text style={styles.durationText}>{next.durationMinutes} min</Text>
             </View>
-          </SafeAreaView>
-      </Pressable>
+          </AnimatedSafeAreaView>
+      </MotionPressable>
 
       <View style={styles.dashboardBody}>
         <View style={styles.factStrip}>
@@ -221,7 +264,7 @@ function TrainingDashboard() {
           <QuickAction icon="list-outline" title="Szczegóły treningu" subtitle="Plan, miejsce i uczestnicy" onPress={() => openTraining(next)} />
         </View>
 
-        <Pressable onPress={() => openTraining(next)} style={({ pressed }) => [pressed && styles.pressed]}>
+        <MotionPressable onPress={() => openTraining(next)} pressedScale={0.99}>
           <View style={styles.noteCard}>
             <View style={styles.noteIcon}><Ionicons name="reader-outline" size={18} color={theme.colors.secondaryText} /></View>
             <View style={styles.flex}>
@@ -231,7 +274,7 @@ function TrainingDashboard() {
             </View>
             <Ionicons name="chevron-forward" size={17} color={theme.colors.tertiaryText} />
           </View>
-        </Pressable>
+        </MotionPressable>
 
         <View style={styles.calendarCard}>
           <View style={styles.calendarHeader}>
@@ -310,7 +353,7 @@ function TrainingDashboard() {
 
         <AppButton title={`Sport: ${selectedSport}`} icon="swap-horizontal" variant="ghost" onPress={() => router.push('/sport-picker')} />
       </View>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
 
@@ -331,9 +374,10 @@ function PackageColumn({
   return (
     <View style={styles.packageColumn}>
       <Card style={styles.packageCard}>
-        <Pressable
+        <MotionPressable
           onPress={() => { selectionHaptic(); onDetails(); }}
-          style={({ pressed }) => [styles.packageDetails, pressed && styles.pressed]}>
+          pressedScale={0.985}
+          style={styles.packageDetails}>
           <View style={styles.packageLabelRow}>
             <View style={styles.packageScopeRow}>
               <Ionicons
@@ -360,19 +404,21 @@ function PackageColumn({
               ]}
             />
           </View>
-        </Pressable>
-        <Pressable
+        </MotionPressable>
+        <MotionPressable
           onPress={() => { selectionHaptic(); onTopUp(); }}
-          style={({ pressed }) => [styles.packageTopUp, pressed && styles.pressed]}>
+          pressedScale={0.98}
+          style={styles.packageTopUp}>
           <Ionicons name="add" size={13} color={theme.colors.secondaryText} />
           <Text style={styles.topUpLink}>Dokup pakiet</Text>
           <View style={styles.flex} />
           <Ionicons name="chevron-forward" size={12} color={theme.colors.tertiaryText} />
-        </Pressable>
+        </MotionPressable>
       </Card>
-      <Pressable
+      <MotionPressable
         onPress={() => { selectionHaptic(); onDiscover(); }}
-        style={({ pressed }) => [styles.discoveryTile, pressed && styles.pressed]}>
+        pressedScale={0.985}
+        style={styles.discoveryTile}>
         <Ionicons
           name={trainerPackage ? 'person-add-outline' : 'search'}
           size={15}
@@ -383,7 +429,7 @@ function PackageColumn({
         </Text>
         <View style={styles.flex} />
         <Ionicons name="chevron-forward" size={12} color={theme.colors.tertiaryText} />
-      </Pressable>
+      </MotionPressable>
     </View>
   );
 }
@@ -399,17 +445,18 @@ function HeroFact({ icon, label, value }: { icon: React.ComponentProps<typeof Io
 
 function QuickAction({ icon, title, subtitle, onPress }: { icon: React.ComponentProps<typeof Ionicons>['name']; title: string; subtitle: string; onPress: () => void }) {
   return (
-    <Pressable
+    <MotionPressable
       onPress={() => { selectionHaptic(); onPress(); }}
       android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
-      style={({ pressed }) => [styles.quickAction, pressed && styles.pressed]}>
+      pressedScale={0.985}
+      style={styles.quickAction}>
       <Ionicons name={icon} size={20} color={theme.colors.secondaryText} />
       <View style={styles.flex}>
         <Text style={styles.quickTitle}>{title}</Text>
         <Text style={styles.quickSubtitle}>{subtitle}</Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={theme.colors.tertiaryText} />
-    </Pressable>
+    </MotionPressable>
   );
 }
 
@@ -429,7 +476,7 @@ const styles = StyleSheet.create({
   locked: { opacity: 0.38 },
   freshContent: { paddingBottom: 40 },
   freshHero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', justifyContent: 'flex-end', backgroundColor: theme.colors.background },
-  freshHeroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.58, transform: [{ scale: 0.92 }] },
+  freshHeroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.58 },
   freshHeroContent: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 22, paddingBottom: 36 },
   welcomePill: { alignSelf: 'flex-start', flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 18 },
   welcomeText: { color: theme.colors.lime, fontSize: 11.5, fontWeight: '600' },
@@ -456,7 +503,7 @@ const styles = StyleSheet.create({
   reassuranceText: { color: theme.colors.secondaryText, fontSize: 13, lineHeight: 18, marginTop: 4 },
   dashboardContent: { paddingBottom: 30 },
   hero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: theme.colors.background },
-  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.58, transform: [{ scale: 0.92 }] },
+  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.58 },
   heroContent: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 34, paddingHorizontal: 20 },
   heroEyebrow: { color: 'rgba(255,255,255,0.68)', fontSize: 10.5, fontWeight: '500' },
   heroTime: { color: theme.colors.text, fontSize: 58, fontWeight: '200', letterSpacing: -3.1, marginTop: 7 },

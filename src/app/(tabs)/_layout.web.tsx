@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
-import React, { ComponentProps, forwardRef } from 'react';
+import React, { ComponentProps, forwardRef, useEffect } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -10,6 +10,15 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  interpolate,
+  interpolateColor,
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { theme } from '@/theme';
 
@@ -76,7 +85,37 @@ const WebTabButton = forwardRef<View, WebTabButtonProps>(function WebTabButton(
   },
   ref,
 ) {
-  const color = isFocused ? theme.colors.lime : theme.colors.secondaryText;
+  const focus = useSharedValue(isFocused ? 1 : 0);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    focus.value = withSpring(isFocused ? 1 : 0, {
+      damping: 20,
+      stiffness: 260,
+      mass: 0.58,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [focus, isFocused]);
+
+  const activeIconStyle = useAnimatedStyle(() => ({
+    opacity: focus.value,
+    transform: [{ scale: reduceMotion ? 1 : interpolate(focus.value, [0, 1], [0.82, 1.08]) }],
+  }), [reduceMotion]);
+  const inactiveIconStyle = useAnimatedStyle(() => ({
+    opacity: 1 - focus.value,
+    transform: [{ scale: reduceMotion ? 1 : interpolate(focus.value, [0, 1], [1, 0.88]) }],
+  }), [reduceMotion]);
+  const labelStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      focus.value,
+      [0, 1],
+      [theme.colors.secondaryText, theme.colors.lime],
+    ),
+  }));
+  const highlightStyle = useAnimatedStyle(() => ({
+    opacity: focus.value,
+    transform: [{ scaleX: reduceMotion ? 1 : interpolate(focus.value, [0, 1], [0.55, 1]) }],
+  }), [reduceMotion]);
 
   return (
     <Pressable
@@ -89,18 +128,24 @@ const WebTabButton = forwardRef<View, WebTabButtonProps>(function WebTabButton(
         isFocused && (isMobile ? styles.selectedMobileTab : styles.selectedDesktopTab),
         pressed && styles.pressedTab,
       ]}>
+      {isMobile ? <Animated.View style={[styles.mobileTabHighlight, highlightStyle]} /> : null}
       <View style={styles.iconWrap}>
-        <Ionicons name={isFocused ? activeIcon : icon} size={22} color={color} />
+        <Animated.View style={[styles.iconLayer, inactiveIconStyle]}>
+          <Ionicons name={icon} size={22} color={theme.colors.secondaryText} />
+        </Animated.View>
+        <Animated.View style={[styles.iconLayer, activeIconStyle]}>
+          <Ionicons name={activeIcon} size={22} color={theme.colors.lime} />
+        </Animated.View>
         {badge ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{badge}</Text>
           </View>
         ) : null}
       </View>
-      <Text style={[styles.label, { color }, isFocused && styles.selectedLabel]}>
+      <Animated.Text style={[styles.label, labelStyle, isFocused && styles.selectedLabel]}>
         {label}
-      </Text>
-      {isFocused && !isMobile ? <View style={styles.activeIndicator} /> : null}
+      </Animated.Text>
+      {!isMobile ? <Animated.View style={[styles.activeIndicator, highlightStyle]} /> : null}
     </Pressable>
   );
 });
@@ -222,6 +267,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 28,
     height: 25,
+  },
+  iconLayer: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mobileTabHighlight: {
+    position: 'absolute',
+    top: 3,
+    width: 42,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(199,225,46,0.1)',
   },
   label: {
     fontSize: 11,

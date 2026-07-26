@@ -1,11 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { ComponentProps, PropsWithChildren, ReactNode } from 'react';
+import React, { ComponentProps, PropsWithChildren, ReactNode, useEffect } from 'react';
 import {
   ActivityIndicator,
   Platform,
-  Pressable,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -17,7 +16,16 @@ import {
   ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  interpolate,
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
+import { MotionPressable } from '@/components/motion';
 import { theme } from '@/theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -87,11 +95,33 @@ export function Header({
 }
 
 export function SheetPage({ children }: PropsWithChildren) {
+  const entrance = useSharedValue(Platform.OS === 'web' ? 0 : 1);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    entrance.value = withSpring(1, {
+      damping: 22,
+      stiffness: 230,
+      mass: 0.72,
+      overshootClamping: false,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [entrance]);
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: reduceMotion ? 1 : entrance.value,
+  }), [reduceMotion]);
+  const panelStyle = useAnimatedStyle(() => ({
+    opacity: reduceMotion ? 1 : interpolate(entrance.value, [0, 0.35, 1], [0.45, 0.9, 1]),
+    transform: [{ translateY: reduceMotion ? 0 : interpolate(entrance.value, [0, 1], [72, 0]) }],
+  }), [reduceMotion]);
+
   if (Platform.OS !== 'web') return <>{children}</>;
 
   return (
     <View style={styles.sheetBackdrop}>
-      <View style={styles.sheetPanel}>{children}</View>
+      <Animated.View pointerEvents="none" style={[styles.sheetBackdropTint, backdropStyle]} />
+      <Animated.View style={[styles.sheetPanel, panelStyle]}>{children}</Animated.View>
     </View>
   );
 }
@@ -108,9 +138,9 @@ export function ModalHeader({ title, doneLabel, onDone, trailing }: { title: str
     <SafeAreaView edges={['top']} style={styles.modalHeaderSafe}>
       <View style={styles.modalHeader}>
         {doneLabel && onDone ? (
-          <Pressable onPress={onDone} hitSlop={12}>
+          <MotionPressable onPress={onDone} hitSlop={12} pressedScale={0.96}>
             <Text style={styles.doneText}>{doneLabel}</Text>
-          </Pressable>
+          </MotionPressable>
         ) : trailing ?? <View style={styles.headerSpacer} />}
         <Text style={styles.modalTitle}>{title}</Text>
         <IconButton icon="close" accessibilityLabel="Zamknij" onPress={() => router.back()} />
@@ -148,16 +178,17 @@ export function AppButton({
   compact?: boolean;
 }) {
   return (
-    <Pressable
+    <MotionPressable
       accessibilityRole="button"
       disabled={disabled}
       android_ripple={{ color: 'rgba(255,255,255,0.12)' }}
+      pressedScale={0.985}
       onPress={() => {
         if (variant === 'primary') actionHaptic();
         else selectionHaptic();
         onPress();
       }}
-      style={({ pressed }) => [
+      style={[
         styles.button,
         compact && styles.buttonCompact,
         variant === 'primary' && styles.buttonPrimary,
@@ -165,7 +196,6 @@ export function AppButton({
         variant === 'ghost' && styles.buttonGhost,
         variant === 'danger' && styles.buttonDanger,
         disabled && styles.disabled,
-        pressed && Platform.OS === 'ios' && styles.pressed,
       ]}>
       {icon ? <Ionicons name={icon} size={18} color={variant === 'primary' ? '#12130F' : variant === 'danger' ? theme.colors.danger : theme.colors.text} /> : null}
       <Text style={[
@@ -173,24 +203,25 @@ export function AppButton({
         variant === 'primary' && styles.buttonTextPrimary,
         variant === 'danger' && styles.buttonTextDanger,
       ]}>{title}</Text>
-    </Pressable>
+    </MotionPressable>
   );
 }
 
 export function IconButton({ icon, onPress, accessibilityLabel }: { icon: IconName; onPress: () => void; accessibilityLabel: string }) {
   return (
-    <Pressable
+    <MotionPressable
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       hitSlop={10}
       android_ripple={{ color: 'rgba(255,255,255,0.12)', borderless: true }}
+      pressedScale={0.92}
       onPress={() => {
         selectionHaptic();
         onPress();
       }}
-      style={({ pressed }) => [styles.iconButton, pressed && Platform.OS === 'ios' && styles.pressed]}>
+      style={styles.iconButton}>
       <Ionicons name={icon} size={21} color={theme.colors.text} />
-    </Pressable>
+    </MotionPressable>
   );
 }
 
@@ -203,14 +234,15 @@ export function Pill({ label, active, onPress, icon }: { label: string; active?:
   );
   if (!onPress) return <View style={[styles.pill, active && styles.pillActive]}>{content}</View>;
   return (
-    <Pressable
+    <MotionPressable
       onPress={() => {
         selectionHaptic();
         onPress();
       }}
-      style={({ pressed }) => [styles.pill, active && styles.pillActive, pressed && styles.pressed]}>
+      pressedScale={0.96}
+      style={[styles.pill, active && styles.pillActive]}>
       {content}
-    </Pressable>
+    </MotionPressable>
   );
 }
 
@@ -241,15 +273,16 @@ export function InfoRow({
   );
   if (!onPress) return <View style={[styles.infoRow, flat && styles.flatListRow]}>{content}</View>;
   return (
-    <Pressable
+    <MotionPressable
       android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+      pressedScale={0.99}
       onPress={() => {
         selectionHaptic();
         onPress();
       }}
-      style={({ pressed }) => [styles.infoRow, flat && styles.flatListRow, pressed && Platform.OS === 'ios' && styles.pressed]}>
+      style={[styles.infoRow, flat && styles.flatListRow]}>
       {content}
-    </Pressable>
+    </MotionPressable>
   );
 }
 
@@ -315,7 +348,7 @@ export function Segmented<T extends string>({
   return (
     <View style={styles.segmented}>
       {values.map((item) => (
-        <Pressable
+        <MotionPressable
           key={item.value}
           accessibilityLabel={item.label}
           accessibilityRole="button"
@@ -324,9 +357,10 @@ export function Segmented<T extends string>({
             selectionHaptic();
             onChange(item.value);
           }}
+          pressedScale={0.97}
           style={[styles.segment, value === item.value && styles.segmentSelected]}>
           <Text style={[styles.segmentText, value === item.value && styles.segmentTextSelected]}>{item.label}</Text>
-        </Pressable>
+        </MotionPressable>
       ))}
     </View>
   );
@@ -354,7 +388,8 @@ const styles = StyleSheet.create({
   headerTitle: { color: theme.colors.text, fontSize: 32, fontWeight: '700', letterSpacing: -0.8 },
   headerSubtitle: { color: theme.colors.secondaryText, fontSize: 14, marginTop: 3 },
   modalHeaderSafe: { backgroundColor: theme.colors.background },
-  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheetBackdrop: { flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-end' },
+  sheetBackdropTint: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)' },
   sheetPanel: { height: '75%', maxHeight: '75%', overflow: 'hidden', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: theme.colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border },
   modalHeader: { height: 58, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   modalTitle: { color: theme.colors.text, fontSize: 17, fontWeight: '600' },
