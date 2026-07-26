@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
   Image,
-  ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -155,6 +154,7 @@ function FreshDashboard() {
 
 function TrainingDashboard() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { trainings, packages, selectedSport, trainingNote } = useAppStore();
   const [selectedDay, setSelectedDay] = useState(0);
   const [referenceTime] = useState(() => new Date().getTime());
@@ -164,6 +164,7 @@ function TrainingDashboard() {
     [referenceTime, trainings],
   );
   const next = futureTrainings[0] ?? trainings[0];
+  const heroHeight = width < 768 ? Math.min(width * 1.5, 580) : 390;
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -183,8 +184,8 @@ function TrainingDashboard() {
       contentContainerStyle={styles.dashboardContent}
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}>
-      <Pressable onPress={() => openTraining(next)} style={({ pressed }) => [styles.hero, pressed && styles.pressed]}>
-        <ImageBackground source={courtImage} style={styles.heroImageBackground} resizeMode="cover">
+      <Pressable onPress={() => openTraining(next)} style={({ pressed }) => [styles.hero, { height: heroHeight }, pressed && styles.pressed]}>
+        <Image source={courtImage} resizeMode="contain" style={styles.heroImage} />
           <LinearGradient colors={['rgba(3,10,6,0.05)', 'rgba(3,10,6,0.25)', theme.colors.background]} style={StyleSheet.absoluteFill} />
           <SafeAreaView edges={['top']} style={styles.heroContent}>
             <Text style={styles.heroEyebrow}>Następny trening</Text>
@@ -196,7 +197,6 @@ function TrainingDashboard() {
               <Text style={styles.durationText}>{next.durationMinutes} min</Text>
             </View>
           </SafeAreaView>
-        </ImageBackground>
       </Pressable>
 
       <View style={styles.dashboardBody}>
@@ -447,8 +447,8 @@ const styles = StyleSheet.create({
   reassuranceTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '600' },
   reassuranceText: { color: theme.colors.secondaryText, fontSize: 13, lineHeight: 18, marginTop: 4 },
   dashboardContent: { paddingBottom: 30 },
-  hero: { height: 390, overflow: 'hidden' },
-  heroImageBackground: { flex: 1 },
+  hero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: theme.colors.background },
+  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   heroContent: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 45, paddingHorizontal: 20 },
   heroEyebrow: { color: 'rgba(255,255,255,0.68)', fontSize: 10.5, fontWeight: '500' },
   heroTime: { color: theme.colors.text, fontSize: 67, fontWeight: '200', letterSpacing: -3.6, marginTop: 9 },

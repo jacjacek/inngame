@@ -107,13 +107,13 @@ export function ModalHeader({ title, doneLabel, onDone, trailing }: { title: str
   return (
     <SafeAreaView edges={['top']} style={styles.modalHeaderSafe}>
       <View style={styles.modalHeader}>
-        <IconButton icon="close" accessibilityLabel="Zamknij" onPress={() => router.back()} />
-        <Text style={styles.modalTitle}>{title}</Text>
         {doneLabel && onDone ? (
           <Pressable onPress={onDone} hitSlop={12}>
             <Text style={styles.doneText}>{doneLabel}</Text>
           </Pressable>
         ) : trailing ?? <View style={styles.headerSpacer} />}
+        <Text style={styles.modalTitle}>{title}</Text>
+        <IconButton icon="close" accessibilityLabel="Zamknij" onPress={() => router.back()} />
       </View>
     </SafeAreaView>
   );
