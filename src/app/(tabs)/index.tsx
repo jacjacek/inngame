@@ -52,7 +52,7 @@ function useHeroParallax() {
           ? 0
           : interpolate(scrollY.value, [0, 180], [0, 10], Extrapolation.CLAMP),
       },
-      { scale: 0.92 },
+      { scale: 1.06 },
     ],
   }), [reduceMotion]);
   const contentStyle = useAnimatedStyle(() => ({
@@ -90,7 +90,7 @@ function FreshDashboard() {
   const { width } = useWindowDimensions();
   const { profileCompleted, selectedTrainerId, completedSteps } = useAppStore();
   const progress = completedSteps / 3;
-  const heroHeight = width < 768 ? Math.min(width * 1.18, 460) : 390;
+  const heroHeight = width < 768 ? Math.min(Math.max(width * 0.86, 320), 352) : 360;
   const heroMotion = useHeroParallax();
 
   const steps = [
@@ -126,10 +126,10 @@ function FreshDashboard() {
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}>
       <View style={[styles.freshHero, { height: heroHeight }]}>
-        <Animated.Image source={courtImage} resizeMode="contain" style={[styles.freshHeroImage, heroMotion.imageStyle]} />
+        <Animated.Image source={courtImage} resizeMode="cover" style={[styles.freshHeroImage, heroMotion.imageStyle]} />
         <LinearGradient
-          colors={['rgba(17,18,15,0.28)', 'rgba(17,18,15,0.52)', theme.colors.background]}
-          locations={[0, 0.54, 1]}
+          colors={['rgba(17,18,15,0.08)', 'rgba(17,18,15,0.22)', 'rgba(17,18,15,0.96)']}
+          locations={[0, 0.48, 1]}
           style={StyleSheet.absoluteFill}
         />
         <AnimatedSafeAreaView edges={['top']} style={[styles.freshHeroContent, heroMotion.contentStyle]}>
@@ -208,7 +208,7 @@ function TrainingDashboard() {
     [referenceTime, trainings],
   );
   const next = futureTrainings[0] ?? trainings[0];
-  const heroHeight = width < 768 ? Math.min(width * 1.18, 460) : 390;
+  const heroHeight = width < 768 ? Math.min(Math.max(width * 0.86, 320), 352) : 360;
   const heroMotion = useHeroParallax();
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
@@ -232,10 +232,10 @@ function TrainingDashboard() {
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}>
       <MotionPressable onPress={() => openTraining(next)} pressedScale={0.995} style={[styles.hero, { height: heroHeight }]}>
-        <Animated.Image source={courtImage} resizeMode="contain" style={[styles.heroImage, heroMotion.imageStyle]} />
+        <Animated.Image source={courtImage} resizeMode="cover" style={[styles.heroImage, heroMotion.imageStyle]} />
           <LinearGradient
-            colors={['rgba(17,18,15,0.3)', 'rgba(17,18,15,0.58)', theme.colors.background]}
-            locations={[0, 0.56, 1]}
+            colors={['rgba(17,18,15,0.12)', 'rgba(17,18,15,0.3)', 'rgba(17,18,15,0.97)']}
+            locations={[0, 0.46, 1]}
             style={StyleSheet.absoluteFill}
           />
           <AnimatedSafeAreaView edges={['top']} style={[styles.heroContent, heroMotion.contentStyle]}>
@@ -476,12 +476,12 @@ const styles = StyleSheet.create({
   locked: { opacity: 0.38 },
   freshContent: { paddingBottom: 40 },
   freshHero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', justifyContent: 'flex-end', backgroundColor: theme.colors.background },
-  freshHeroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.58 },
-  freshHeroContent: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 22, paddingBottom: 36 },
-  welcomePill: { alignSelf: 'flex-start', flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 18 },
+  freshHeroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.78 },
+  freshHeroContent: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 22, paddingBottom: 24 },
+  welcomePill: { alignSelf: 'flex-start', flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.42)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 14 },
   welcomeText: { color: theme.colors.lime, fontSize: 11.5, fontWeight: '600' },
-  freshTitle: { color: theme.colors.text, fontSize: 37, fontWeight: '700', letterSpacing: -1.2, lineHeight: 42 },
-  freshSubtitle: { color: theme.colors.secondaryText, fontSize: 15, lineHeight: 21, marginTop: 12, maxWidth: 330 },
+  freshTitle: { color: theme.colors.text, fontSize: 34, fontWeight: '700', letterSpacing: -1.1, lineHeight: 38 },
+  freshSubtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 14.5, lineHeight: 20, marginTop: 9, maxWidth: 320 },
   freshCards: { paddingHorizontal: 16, gap: 14 },
   checklist: { paddingHorizontal: 2, paddingVertical: 8 },
   checklistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -503,15 +503,15 @@ const styles = StyleSheet.create({
   reassuranceText: { color: theme.colors.secondaryText, fontSize: 13, lineHeight: 18, marginTop: 4 },
   dashboardContent: { paddingBottom: 30 },
   hero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: theme.colors.background },
-  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.58 },
-  heroContent: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 34, paddingHorizontal: 20 },
+  heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.74 },
+  heroContent: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 23, paddingHorizontal: 20 },
   heroEyebrow: { color: 'rgba(255,255,255,0.68)', fontSize: 10.5, fontWeight: '500' },
-  heroTime: { color: theme.colors.text, fontSize: 58, fontWeight: '200', letterSpacing: -3.1, marginTop: 7 },
+  heroTime: { color: theme.colors.text, fontSize: 52, fontWeight: '200', letterSpacing: -2.8, marginTop: 5 },
   heroTitle: { color: theme.colors.text, fontSize: 19, fontWeight: '600', marginTop: 3 },
   heroMeta: { color: theme.colors.secondaryText, fontSize: 13, marginTop: 6 },
   durationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   durationText: { color: theme.colors.secondaryText, fontSize: 12 },
-  dashboardBody: { paddingHorizontal: 16, marginTop: -27, gap: 12 },
+  dashboardBody: { paddingHorizontal: 16, marginTop: -8, gap: 12 },
   factStrip: { minHeight: 66, flexDirection: 'row', paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
   heroFact: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5 },
   factLabelRow: { flexDirection: 'row', gap: 5, alignItems: 'center' },
