@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
-import React, { ComponentProps, forwardRef, useEffect } from 'react';
+import React, { ComponentProps, forwardRef, useEffect, useSyncExternalStore } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -20,11 +20,16 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
+import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_TAB_BAR_HEIGHT = 64;
 const MOBILE_TAB_BAR_GAP = 0;
+
+const subscribeToClientLayout = () => () => undefined;
+const getClientLayoutSnapshot = () => true;
+const getServerLayoutSnapshot = () => false;
 
 const glassBackdrop = {
   backdropFilter: 'blur(24px) saturate(180%)',
@@ -53,7 +58,6 @@ const tabs = [
     label: 'Czat',
     icon: 'chatbubbles-outline',
     activeIcon: 'chatbubbles',
-    badge: 2,
   },
   {
     name: 'profile',
@@ -121,7 +125,7 @@ const WebTabButton = forwardRef<View, WebTabButtonProps>(function WebTabButton(
     <Pressable
       {...pressableProps}
       ref={ref}
-      accessibilityLabel={label}
+      accessibilityLabel={badge ? `${label}, ${badge} nieprzeczytane` : label}
       style={({ pressed }) => [
         styles.tab,
         isMobile ? styles.mobileTab : styles.desktopTab,
@@ -151,11 +155,20 @@ const WebTabButton = forwardRef<View, WebTabButtonProps>(function WebTabButton(
 });
 
 export default function WebTabsLayout() {
+  const store = useAppStore();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const isMobile = width < MOBILE_BREAKPOINT;
+  const clientLayoutReady = useSyncExternalStore(
+    subscribeToClientLayout,
+    getClientLayoutSnapshot,
+    getServerLayoutSnapshot,
+  );
+  const isMobile = !clientLayoutReady || width < MOBILE_BREAKPOINT;
   const mobileBarOffset = Math.max(insets.bottom, MOBILE_TAB_BAR_GAP);
   const mobileContentInset = MOBILE_TAB_BAR_HEIGHT + mobileBarOffset + 8;
+  const unreadMessages = Object.values(store.conversationUnread).reduce((total, unread) => total + unread, 0);
+  const unreadOffers = store.availabilityOffers.filter((offer) => offer.status === 'available' && !offer.readAt).length;
+  const chatBadge = unreadMessages + unreadOffers;
 
   const tabBar = (
     <TabList
@@ -178,7 +191,7 @@ export default function WebTabsLayout() {
             label={tab.label}
             icon={tab.icon}
             activeIcon={tab.activeIcon}
-            badge={'badge' in tab ? tab.badge : undefined}
+            badge={tab.name === 'chat' ? chatBadge || undefined : undefined}
             isMobile={isMobile}
           />
         </TabTrigger>

@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Linking, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 
+import { preferenceSummary } from '@/data/availability';
 import { trainers } from '@/data/models';
 import { trainerPhotos } from '@/data/trainer-media';
 import { AppButton, Divider, IconButton, InfoRow, ModalHeader, withSheetPage } from '@/components/ui';
@@ -16,6 +17,7 @@ function TrainerProfileScreen() {
   const trainer = trainers.find((candidate) => candidate.id === id);
   if (!trainer) return null;
   const selected = store.selectedTrainerId === trainer.id;
+  const availabilityPreference = store.availabilityPreferences[trainer.id];
 
   const choose = () => {
     store.selectTrainer(trainer.id);
@@ -56,6 +58,22 @@ function TrainerProfileScreen() {
             <Text style={styles.availabilityLabel}>Najbliższy termin</Text>
             <Text style={styles.availabilityValue}>{trainer.availability}</Text>
           </View>
+        </View>
+
+        <View style={styles.alertPreference}>
+          <View style={styles.alertIcon}>
+            <Ionicons name="flash-outline" size={19} color={availabilityPreference.enabled ? theme.colors.lime : theme.colors.secondaryText} />
+          </View>
+          <View style={styles.flex}>
+            <Text style={styles.availabilityLabel}>Powiadomienia o wolnych terminach</Text>
+            <Text numberOfLines={2} style={styles.availabilityValue}>{preferenceSummary(availabilityPreference)}</Text>
+          </View>
+          <AppButton
+            compact
+            title={availabilityPreference.enabled ? 'Edytuj' : 'Włącz'}
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/availability-preferences', params: { trainerId: trainer.id } })}
+          />
         </View>
 
         <View style={styles.section}>
@@ -116,6 +134,8 @@ const styles = StyleSheet.create({
   metricValue: { color: theme.colors.text, fontSize: 18, fontWeight: '600' },
   metricLabel: { color: theme.colors.secondaryText, fontSize: 10.5, marginTop: 5 },
   availability: { paddingHorizontal: 2, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
+  alertPreference: { paddingHorizontal: 2, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
+  alertIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(199,225,46,0.08)' },
   calendarIcon: { width: 36, alignItems: 'center', justifyContent: 'center' },
   availabilityLabel: { color: theme.colors.secondaryText, fontSize: 10, fontWeight: '500' },
   availabilityValue: { color: theme.colors.text, fontSize: 14, fontWeight: '600', marginTop: 4 },

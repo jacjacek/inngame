@@ -235,6 +235,9 @@ export function Pill({ label, active, onPress, icon }: { label: string; active?:
   if (!onPress) return <View style={[styles.pill, active && styles.pillActive]}>{content}</View>;
   return (
     <MotionPressable
+      accessibilityLabel={label}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: Boolean(active) }}
       onPress={() => {
         selectionHaptic();
         onPress();
@@ -310,6 +313,8 @@ export function ToggleRow({
         {subtitle ? <Text style={styles.infoDetail}>{subtitle}</Text> : null}
       </View>
       <Switch
+        accessibilityLabel={title}
+        accessibilityState={{ checked: value }}
         value={value}
         onValueChange={(next) => {
           selectionHaptic();

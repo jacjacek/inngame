@@ -43,6 +43,7 @@ export default function WebRootLayout() {
             <Stack.Screen name="sport-picker" options={sheetOptions} />
             <Stack.Screen name="tennis-level" options={sheetOptions} />
             <Stack.Screen name="training-note" options={sheetOptions} />
+            <Stack.Screen name="availability-preferences" options={sheetOptions} />
           </Stack>
         </ThemeProvider>
       </AppStoreProvider>

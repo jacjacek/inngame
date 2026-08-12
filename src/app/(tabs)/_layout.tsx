@@ -1,8 +1,13 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
+import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
 export default function TabsLayout() {
+  const store = useAppStore();
+  const unreadMessages = Object.values(store.conversationUnread).reduce((total, unread) => total + unread, 0);
+  const unreadOffers = store.availabilityOffers.filter((offer) => offer.status === 'available' && !offer.readAt).length;
+  const chatBadge = unreadMessages + unreadOffers;
   return (
     <NativeTabs
       backBehavior="history"
@@ -39,7 +44,7 @@ export default function TabsLayout() {
           sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }}
           md={{ default: 'chat_bubble_outline', selected: 'chat_bubble' }}
         />
-        <NativeTabs.Trigger.Badge>2</NativeTabs.Trigger.Badge>
+        {chatBadge ? <NativeTabs.Trigger.Badge>{String(chatBadge)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>

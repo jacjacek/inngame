@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1080" viewBox="0 0 1500 1080">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#000" flood-opacity=".38"/></filter>
+    <linearGradient id="offer" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#25291D"/><stop offset="1" stop-color="#191B17"/></linearGradient>
+    <style>
+      .ui{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.w{fill:#F7F7F3}.m{fill:rgba(255,255,255,.62)}.t{fill:rgba(255,255,255,.38)}.l{fill:#C7E12E}.d{fill:#11120F}.title{font-size:28px;font-weight:700;letter-spacing:-.6px}.h1{font-size:21px;font-weight:700}.h2{font-size:15px;font-weight:650}.body{font-size:13px}.small{font-size:11px}.tiny{font-size:9px}.caps{font-size:9px;font-weight:750;letter-spacing:1.1px}.line{stroke:rgba(255,255,255,.075);stroke-width:1}
+    </style>
+  </defs>
+  <rect width="1500" height="1080" fill="#090A08"/>
+  <g class="ui">
+    <text x="70" y="70" class="w" font-size="30" font-weight="750">Alternatywa: szybki rytm tygodnia</text>
+    <text x="70" y="99" class="m body">Mniej precyzji, ale ustawienie zajmuje kilkanaście sekund i dobrze działa na ekranie trenera</text>
+    <g transform="translate(1197,56)"><rect width="227" height="42" rx="21" fill="#181916" stroke="rgba(255,255,255,.08)"/><circle cx="23" cy="21" r="6" fill="#57B8F2"/><text x="40" y="26" class="m small">Wariant szybki · klient</text></g>
+  </g>
+
+  <!-- Phone 1 trainer profile -->
+  <g transform="translate(65,145)" filter="url(#shadow)" class="ui">
+    <rect width="420" height="820" rx="46" fill="#141512" stroke="#32332F" stroke-width="2"/><rect x="10" y="10" width="400" height="800" rx="38" fill="#11120F"/><rect x="156" y="18" width="108" height="27" rx="14" fill="#050605"/>
+    <text x="28" y="45" class="w small" font-weight="650">9:41</text><text x="335" y="45" class="w small">●  ◒  ▰</text>
+    <text x="27" y="84" class="w" font-size="28">‹</text><text x="64" y="82" class="w h1">Profil trenera</text><text x="372" y="82" class="m" font-size="20">↗</text>
+    <circle cx="210" cy="152" r="50" fill="#3B3E37"/><text x="210" y="160" class="w" font-size="20" text-anchor="middle" font-weight="700">BN</text>
+    <text x="210" y="229" class="w" font-size="25" text-anchor="middle" font-weight="700">Bartek Nowak</text><text x="210" y="252" class="m body" text-anchor="middle">Technika i gra meczowa</text>
+    <text x="210" y="280" class="l body" text-anchor="middle">★ 4,9 · 86 opinii · 120 zł/h</text>
+
+    <rect x="24" y="307" width="372" height="94" rx="20" fill="#20211E" stroke="rgba(199,225,46,.18)"/>
+    <circle cx="57" cy="342" r="17" fill="rgba(199,225,46,.12)"/><path d="M51 343h12M57 337v12" stroke="#C7E12E" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="85" y="337" class="w h2">Wolne terminy</text><text x="85" y="359" class="m small">Wt, Czw wieczór · Sob rano</text><text x="85" y="380" class="l tiny" font-weight="650">POWIADOMIENIA WŁĄCZONE</text>
+    <rect x="328" y="329" width="47" height="28" rx="14" fill="#C7E12E"/><circle cx="360" cy="343" r="11" fill="#11120F"/>
+
+    <line x1="28" y1="432" x2="392" y2="432" class="line"/><text x="28" y="461" class="w h2">Najbliższy termin</text><text x="28" y="489" class="m body">Jutro od 17:00</text><text x="370" y="485" class="t" font-size="20">›</text>
+    <line x1="28" y1="514" x2="392" y2="514" class="line"/><text x="28" y="544" class="w h2">O trenerze</text><text x="28" y="571" class="m body">Konkretny feedback, wysoka intensywność</text><text x="28" y="591" class="m body">i ćwiczenia przekładające się na grę meczową.</text>
+    <line x1="28" y1="620" x2="392" y2="620" class="line"/><text x="28" y="649" class="w h2">Kluby</text><text x="28" y="675" class="m body">Korty Deski · Legia Tenis</text>
+    <rect x="25" y="730" width="370" height="50" rx="15" fill="#C7E12E"/><text x="210" y="761" class="d body" text-anchor="middle" font-weight="750">Zobacz kalendarz</text>
+  </g>
+
+  <!-- Phone 2 compact chat event -->
+  <g transform="translate(540,145)" filter="url(#shadow)" class="ui">
+    <rect width="420" height="820" rx="46" fill="#141512" stroke="#32332F" stroke-width="2"/><rect x="10" y="10" width="400" height="800" rx="38" fill="#11120F"/><rect x="156" y="18" width="108" height="27" rx="14" fill="#050605"/>
+    <text x="28" y="45" class="w small" font-weight="650">9:41</text><text x="335" y="45" class="w small">●  ◒  ▰</text>
+    <line x1="10" y1="106" x2="410" y2="106" class="line"/><text x="27" y="83" class="w" font-size="28">‹</text><circle cx="74" cy="77" r="20" fill="#3B3E37"/><text x="74" y="82" class="w small" text-anchor="middle" font-weight="700">BN</text><text x="104" y="72" class="w h2">Bartek Nowak</text><text x="104" y="91" fill="#98D75B" class="tiny">Aktywny dzisiaj</text><text x="374" y="83" class="l" font-size="21">♟</text>
+    <text x="210" y="137" class="t tiny" text-anchor="middle">DZISIAJ</text>
+    <rect x="40" y="158" width="250" height="52" rx="17" fill="#292A27"/><text x="54" y="181" class="w body">Mam jedno okienko na jutro.</text><text x="270" y="199" class="t tiny" text-anchor="end">18:21</text>
+
+    <rect x="29" y="238" width="362" height="206" rx="22" fill="url(#offer)" stroke="rgba(199,225,46,.28)"/>
+    <circle cx="51" cy="266" r="5" fill="#C7E12E"/><text x="65" y="270" class="l caps">PASUJE DO TWOJEGO PLANU</text>
+    <text x="48" y="308" class="w h1">Jutro · 17:00</text><text x="48" y="334" class="m body">60 min · Korty Deski · 240 zł</text>
+    <rect x="48" y="357" width="226" height="50" rx="15" fill="#C7E12E"/><text x="161" y="388" class="d body" text-anchor="middle" font-weight="750">Zarezerwuj</text>
+    <rect x="285" y="357" width="78" height="50" rx="15" fill="#292A27"/><text x="324" y="378" class="w tiny" text-anchor="middle">SZCZEGÓŁY</text><text x="324" y="393" class="m" font-size="16" text-anchor="middle">›</text>
+    <text x="48" y="430" class="t tiny">Dopasowano: czwartek · wieczór</text>
+
+    <rect x="130" y="468" width="252" height="50" rx="17" fill="#3A4520"/><text x="148" y="492" class="w body">Tym razem nie dam rady.</text><text x="362" y="508" class="t tiny" text-anchor="end">18:24</text>
+    <rect x="29" y="549" width="362" height="73" rx="16" fill="#181916"/><text x="48" y="575" class="w small" font-weight="650">Dostajesz: Wt, Czw wieczór · Sob rano</text><text x="48" y="597" class="m tiny">Dotknij, żeby szybko zmienić rytm tygodnia.</text><text x="367" y="589" class="l" font-size="20">›</text>
+    <text x="210" y="653" class="t tiny" text-anchor="middle">Oferta pozostanie w historii tej rozmowy</text>
+    <line x1="10" y1="718" x2="410" y2="718" class="line"/><rect x="25" y="739" width="42" height="42" rx="21" fill="#20211E"/><text x="46" y="767" class="m" font-size="24" text-anchor="middle">+</text><rect x="77" y="739" width="268" height="42" rx="21" fill="#292A27"/><text x="97" y="765" class="t body">Wiadomość</text><circle cx="370" cy="760" r="21" fill="#C7E12E" opacity=".35"/><text x="370" y="767" class="d" font-size="20" text-anchor="middle">↑</text>
+  </g>
+
+  <!-- Phone 3 weekly matrix -->
+  <g transform="translate(1015,145)" filter="url(#shadow)" class="ui">
+    <rect width="420" height="820" rx="46" fill="#141512" stroke="#32332F" stroke-width="2"/><rect x="10" y="10" width="400" height="800" rx="38" fill="#11120F"/><rect x="156" y="18" width="108" height="27" rx="14" fill="#050605"/>
+    <text x="28" y="45" class="w small" font-weight="650">9:41</text><text x="335" y="45" class="w small">●  ◒  ▰</text>
+    <text x="27" y="84" class="w" font-size="28">‹</text><text x="64" y="82" class="w h1">Twój rytm tygodnia</text><text x="28" y="115" class="m small">Bartek dostanie filtr, kiedy warto Cię powiadomić.</text>
+    <rect x="24" y="139" width="372" height="63" rx="17" fill="#20211E"/><text x="43" y="166" class="w h2">Powiadomienia włączone</text><text x="43" y="186" class="m tiny">Oferty poza planem zostaną tylko w rozmowie.</text><rect x="329" y="158" width="45" height="27" rx="14" fill="#C7E12E"/><circle cx="360" cy="171.5" r="10.5" fill="#11120F"/>
+
+    <text x="27" y="242" class="w h2">Zaznacz pory, które zwykle pasują</text>
+    <text x="220" y="273" class="t tiny" text-anchor="middle">RANO</text><text x="288" y="273" class="t tiny" text-anchor="middle">DZIEŃ</text><text x="357" y="273" class="t tiny" text-anchor="middle">WIECZÓR</text>
+    <!-- matrix rows -->
+    <g transform="translate(25,288)">
+      <rect width="370" height="49" rx="14" fill="#181916"/><text x="17" y="30" class="w body" font-weight="650">Poniedziałek</text><rect x="170" y="7" width="57" height="35" rx="11" fill="#292A27"/><rect x="235" y="7" width="57" height="35" rx="11" fill="#292A27"/><rect x="300" y="7" width="57" height="35" rx="11" fill="#292A27"/>
+      <rect y="56" width="370" height="49" rx="14" fill="#181916"/><text x="17" y="86" class="w body" font-weight="650">Wtorek</text><rect x="170" y="63" width="57" height="35" rx="11" fill="#292A27"/><rect x="235" y="63" width="57" height="35" rx="11" fill="#292A27"/><rect x="300" y="63" width="57" height="35" rx="11" fill="#C7E12E"/><text x="328" y="86" class="d body" text-anchor="middle" font-weight="800">✓</text>
+      <rect y="112" width="370" height="49" rx="14" fill="#181916"/><text x="17" y="142" class="w body" font-weight="650">Środa</text><rect x="170" y="119" width="57" height="35" rx="11" fill="#292A27"/><rect x="235" y="119" width="57" height="35" rx="11" fill="#292A27"/><rect x="300" y="119" width="57" height="35" rx="11" fill="#292A27"/>
+      <rect y="168" width="370" height="49" rx="14" fill="#181916"/><text x="17" y="198" class="w body" font-weight="650">Czwartek</text><rect x="170" y="175" width="57" height="35" rx="11" fill="#292A27"/><rect x="235" y="175" width="57" height="35" rx="11" fill="#292A27"/><rect x="300" y="175" width="57" height="35" rx="11" fill="#C7E12E"/><text x="328" y="198" class="d body" text-anchor="middle" font-weight="800">✓</text>
+      <rect y="224" width="370" height="49" rx="14" fill="#181916"/><text x="17" y="254" class="w body" font-weight="650">Piątek</text><rect x="170" y="231" width="57" height="35" rx="11" fill="#292A27"/><rect x="235" y="231" width="57" height="35" rx="11" fill="#292A27"/><rect x="300" y="231" width="57" height="35" rx="11" fill="#292A27"/>
+      <rect y="280" width="370" height="49" rx="14" fill="#181916"/><text x="17" y="310" class="w body" font-weight="650">Sobota</text><rect x="170" y="287" width="57" height="35" rx="11" fill="#C7E12E"/><text x="198" y="310" class="d body" text-anchor="middle" font-weight="800">✓</text><rect x="235" y="287" width="57" height="35" rx="11" fill="#292A27"/><rect x="300" y="287" width="57" height="35" rx="11" fill="#292A27"/>
+      <rect y="336" width="370" height="49" rx="14" fill="#181916"/><text x="17" y="366" class="w body" font-weight="650">Niedziela</text><rect x="170" y="343" width="57" height="35" rx="11" fill="#292A27"/><rect x="235" y="343" width="57" height="35" rx="11" fill="#292A27"/><rect x="300" y="343" width="57" height="35" rx="11" fill="#292A27"/>
+    </g>
+    <text x="28" y="704" class="m tiny">Rano 06–12 · Dzień 12–17 · Wieczór 17–22</text><text x="389" y="704" class="l tiny" text-anchor="end">Doprecyzuj godziny</text>
+    <line x1="10" y1="728" x2="410" y2="728" class="line"/><rect x="25" y="745" width="370" height="50" rx="15" fill="#C7E12E"/><text x="210" y="776" class="d body" text-anchor="middle" font-weight="750">Zapisz rytm tygodnia</text>
+  </g>
+
+  <g class="ui"><circle cx="512" cy="550" r="18" fill="#20211E" stroke="rgba(87,184,242,.28)"/><text x="512" y="556" fill="#57B8F2" class="h2" text-anchor="middle">›</text><circle cx="987" cy="550" r="18" fill="#20211E" stroke="rgba(87,184,242,.28)"/><text x="987" y="556" fill="#57B8F2" class="h2" text-anchor="middle">›</text>
+    <text x="275" y="1005" class="w h2" text-anchor="middle">1. Wejście przy konkretnym trenerze</text><text x="275" y="1028" class="m small" text-anchor="middle">Od razu widać aktualne ustawienie i można je wyłączyć.</text>
+    <text x="750" y="1005" class="w h2" text-anchor="middle">2. Kompaktowa oferta w rozmowie</text><text x="750" y="1028" class="m small" text-anchor="middle">Szybka rezerwacja bez opuszczania kontekstu czatu.</text>
+    <text x="1225" y="1005" class="w h2" text-anchor="middle">3. Matryca: dzień × pora dnia</text><text x="1225" y="1028" class="m small" text-anchor="middle">Bardzo szybka, ale mniej dokładna niż przedziały godzin.</text>
+  </g>
+</svg>

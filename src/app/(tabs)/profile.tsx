@@ -63,6 +63,14 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <SectionTitle title="Powiadomienia" />
         <View>
+          <InfoRow
+            flat
+            icon="flash-outline"
+            title="Wolne terminy trenerów"
+            detail={store.availabilityNotificationsEnabled ? 'Dopasowane do Twojego rytmu tygodnia' : 'Wyłączone'}
+            onPress={() => router.push('/availability-preferences')}
+          />
+          <Divider inset={0} />
           <ToggleRow
             flat
             title="Przypomnienia o treningach"
