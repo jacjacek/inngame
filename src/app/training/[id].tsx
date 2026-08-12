@@ -5,7 +5,7 @@ import React from 'react';
 import { Alert, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, Divider, endTime, formatDate, formatTime, InfoRow, ModalHeader, selectionHaptic, withSheetPage } from '@/components/ui';
+import { AppButton, Divider, endTime, formatDate, formatTime, InfoRow, LoadingScreen, ModalHeader, selectionHaptic, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
@@ -15,6 +15,8 @@ function TrainingDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
+  const clientReady = useClientReady();
+  if (!clientReady || !store.hydrated) return <LoadingScreen />;
   const training = store.trainings.find((item) => item.id === id);
 
   if (!training) {

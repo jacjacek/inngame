@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { AppButton, Card, Divider, formatDate, InfoRow, ModalHeader, withSheetPage } from '@/components/ui';
+import { AppButton, Card, Divider, formatDate, InfoRow, LoadingScreen, ModalHeader, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
@@ -11,6 +11,8 @@ function PackageDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
+  const clientReady = useClientReady();
+  if (!clientReady || !store.hydrated) return <LoadingScreen />;
   const item = store.packages.find((candidate) => candidate.id === id);
 
   if (!item) {

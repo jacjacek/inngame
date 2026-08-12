@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, ModalHeader, Pill, SectionTitle, selectionHaptic, successHaptic, withSheetPage } from '@/components/ui';
+import { AppButton, LoadingScreen, ModalHeader, Pill, SectionTitle, selectionHaptic, successHaptic, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
@@ -18,10 +18,13 @@ function TopUpScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
+  const clientReady = useClientReady();
   const item = store.packages.find((candidate) => candidate.id === id);
   const [selectedHours, setSelectedHours] = useState(10);
   const [payment, setPayment] = useState('BLIK');
   const [complete, setComplete] = useState(false);
+
+  if (!clientReady || !store.hydrated) return <LoadingScreen />;
 
   if (!item) return <View style={styles.page}><ModalHeader title="Dokup pakiet" /><View style={styles.center}><Text style={styles.muted}>Nie udało się znaleźć tego pakietu.</Text></View></View>;
 

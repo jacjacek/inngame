@@ -6,7 +6,7 @@ import { Image, Linking, ScrollView, Share, StyleSheet, Text, View } from 'react
 import { preferenceSummary } from '@/data/availability';
 import { trainers } from '@/data/models';
 import { trainerPhotos } from '@/data/trainer-media';
-import { AppButton, Divider, IconButton, InfoRow, ModalHeader, withSheetPage } from '@/components/ui';
+import { AppButton, Divider, IconButton, InfoRow, LoadingScreen, ModalHeader, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { theme } from '@/theme';
 
@@ -14,6 +14,8 @@ function TrainerProfileScreen() {
   const router = useRouter();
   const { id, purpose } = useLocalSearchParams<{ id: string; purpose?: string }>();
   const store = useAppStore();
+  const clientReady = useClientReady();
+  if (!clientReady || !store.hydrated) return <LoadingScreen />;
   const trainer = trainers.find((candidate) => candidate.id === id);
   if (!trainer) return null;
   const selected = store.selectedTrainerId === trainer.id;

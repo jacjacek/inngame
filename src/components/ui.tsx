@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { ComponentProps, PropsWithChildren, ReactNode, useEffect } from 'react';
+import React, { ComponentProps, PropsWithChildren, ReactNode, useEffect, useSyncExternalStore } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -29,6 +29,18 @@ import { MotionPressable } from '@/components/motion';
 import { theme } from '@/theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
+
+const subscribeToClientReady = () => () => undefined;
+const getClientReadySnapshot = () => true;
+const getServerReadySnapshot = () => false;
+
+export function useClientReady() {
+  return useSyncExternalStore(
+    subscribeToClientReady,
+    getClientReadySnapshot,
+    getServerReadySnapshot,
+  );
+}
 
 export function selectionHaptic() {
   if (Platform.OS === 'android') {
