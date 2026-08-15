@@ -6,11 +6,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, Field, ModalHeader, Pill, successHaptic, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 const levels = ['Początkujący', 'Średnio zaawansowany', 'Zaawansowany'];
 
 function ProfileFormScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
   const [name, setName] = useState(store.profile.name);
@@ -31,7 +36,7 @@ function ProfileFormScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.hero}>
-            <View style={styles.icon}><Ionicons name="person-outline" size={28} color={theme.colors.lime} /></View>
+            <View style={styles.icon}><Ionicons name="person-outline" size={28} color={theme.colors.accentText} /></View>
             <Text style={styles.title}>Poznajmy się</Text>
             <Text style={styles.subtitle}>Te informacje pomogą nam dobrać trenera, który pasuje do Twojego poziomu i lokalizacji.</Text>
           </View>
@@ -53,12 +58,12 @@ function ProfileFormScreen() {
 
 export default withSheetPage(ProfileFormScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   content: { padding: 16, gap: 22 },
   hero: { alignItems: 'center', paddingTop: 15 },
-  icon: { width: 58, height: 58, borderRadius: 19, backgroundColor: 'rgba(199,225,46,0.12)', alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 58, height: 58, borderRadius: 19, backgroundColor: theme.colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
   title: { color: theme.colors.text, fontSize: 29, fontWeight: '700', marginTop: 15 },
   subtitle: { color: theme.colors.secondaryText, fontSize: 14, lineHeight: 20, textAlign: 'center', maxWidth: 330, marginTop: 7 },
   form: { paddingHorizontal: 2, gap: 17 },

@@ -22,7 +22,7 @@ import Animated, {
 
 import { PurchasedPackage, Training } from '@/data/models';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
 import {
   AppButton,
   Card,
@@ -35,6 +35,10 @@ import {
   selectionHaptic,
 } from '@/components/ui';
 import { MotionPressable } from '@/components/motion';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 const courtImage = require('@/assets/mymovio/wimbledon-court.png');
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
@@ -86,6 +90,7 @@ export default function HomeScreen() {
 }
 
 function FreshDashboard() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { profileCompleted, selectedTrainerId, completedSteps } = useAppStore();
@@ -165,7 +170,7 @@ function FreshDashboard() {
                   style={[styles.stepRow, step.locked && styles.locked]}>
                   <View style={[styles.stepNumber, step.complete && styles.stepComplete]}>
                     {step.complete ? (
-                      <Ionicons name="checkmark" size={17} color="#11120F" />
+                      <Ionicons name="checkmark" size={17} color={theme.colors.onAccent} />
                     ) : step.locked ? (
                       <Ionicons name="lock-closed" size={13} color={theme.colors.tertiaryText} />
                     ) : (
@@ -197,6 +202,7 @@ function FreshDashboard() {
 }
 
 function TrainingDashboard() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { trainings, packages, selectedSport, trainingNote } = useAppStore();
@@ -244,7 +250,7 @@ function TrainingDashboard() {
             <Text style={styles.heroTitle}>{next.title}</Text>
             <Text style={styles.heroMeta}>{dayLabel(new Date(next.start))}  ·  {next.venue}  ·  {next.court}</Text>
             <View style={styles.durationRow}>
-              <Ionicons name="time-outline" size={15} color={theme.colors.secondaryText} />
+              <Ionicons name="time-outline" size={15} color={theme.colors.heroSecondary} />
               <Text style={styles.durationText}>{next.durationMinutes} min</Text>
             </View>
           </AnimatedSafeAreaView>
@@ -293,7 +299,7 @@ function TrainingDashboard() {
                 <Pressable key={date.toISOString()} onPress={() => { selectionHaptic(); setSelectedDay(index); }} style={[styles.day, selectedDay === index && styles.daySelected]}>
                   <Text style={[styles.dayWeek, selectedDay === index && styles.dayTextSelected]}>{new Intl.DateTimeFormat('pl-PL', { weekday: 'short' }).format(date).replace('.', '')}</Text>
                   <Text style={[styles.dayNumber, selectedDay === index && styles.dayTextSelected]}>{date.getDate()}</Text>
-                  {eventCount ? <View style={[styles.eventDot, selectedDay === index && { backgroundColor: '#11120F' }]} /> : <View style={styles.eventDotSpacer} />}
+                  {eventCount ? <View style={[styles.eventDot, selectedDay === index && { backgroundColor: theme.colors.onAccent }]} /> : <View style={styles.eventDotSpacer} />}
                 </Pressable>
               );
             })}
@@ -368,6 +374,7 @@ function PackageColumn({
   onTopUp: () => void;
   onDiscover: () => void;
 }) {
+  const { styles, theme } = useStyles();
   const trainerPackage = item.scope === 'trainer';
   const progress = Math.min(item.remainingHours / item.totalHours, 1);
 
@@ -435,6 +442,7 @@ function PackageColumn({
 }
 
 function HeroFact({ icon, label, value }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; value: string }) {
+  const { styles, theme } = useStyles();
   return (
     <View style={styles.heroFact}>
       <View style={styles.factLabelRow}><Ionicons name={icon} size={11} color={theme.colors.secondaryText} /><Text style={styles.factLabel}>{label}</Text></View>
@@ -444,10 +452,11 @@ function HeroFact({ icon, label, value }: { icon: React.ComponentProps<typeof Io
 }
 
 function QuickAction({ icon, title, subtitle, onPress }: { icon: React.ComponentProps<typeof Ionicons>['name']; title: string; subtitle: string; onPress: () => void }) {
+  const { styles, theme } = useStyles();
   return (
     <MotionPressable
       onPress={() => { selectionHaptic(); onPress(); }}
-      android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
+      android_ripple={{ color: theme.colors.pressed }}
       pressedScale={0.985}
       style={styles.quickAction}>
       <Ionicons name={icon} size={20} color={theme.colors.secondaryText} />
@@ -461,6 +470,7 @@ function QuickAction({ icon, title, subtitle, onPress }: { icon: React.Component
 }
 
 function Metric({ value, label }: { value: string; label: string }) {
+  const { styles } = useStyles();
   return (
     <View style={styles.metric}>
       <Text style={styles.metricValue}>{value}</Text>
@@ -469,7 +479,7 @@ function Metric({ value, label }: { value: string; label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   pressed: { opacity: 0.72 },
@@ -480,15 +490,15 @@ const styles = StyleSheet.create({
   freshHeroContent: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 22, paddingBottom: 24 },
   welcomePill: { alignSelf: 'flex-start', flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.42)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 14 },
   welcomeText: { color: theme.colors.lime, fontSize: 11.5, fontWeight: '600' },
-  freshTitle: { color: theme.colors.text, fontSize: 34, fontWeight: '700', letterSpacing: -1.1, lineHeight: 38 },
-  freshSubtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 14.5, lineHeight: 20, marginTop: 9, maxWidth: 320 },
+  freshTitle: { color: theme.colors.heroText, fontSize: 34, fontWeight: '700', letterSpacing: -1.1, lineHeight: 38 },
+  freshSubtitle: { color: theme.colors.heroSecondary, fontSize: 14.5, lineHeight: 20, marginTop: 9, maxWidth: 320 },
   freshCards: { paddingHorizontal: 16, gap: 14 },
   checklist: { paddingHorizontal: 2, paddingVertical: 8 },
   checklistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardEyebrow: { color: theme.colors.secondaryText, fontSize: 10.5, fontWeight: '500' },
   checklistCaption: { color: theme.colors.secondaryText, marginTop: 5, fontSize: 13 },
   progressLabel: { color: theme.colors.text, fontSize: 22, fontWeight: '300' },
-  progressTrack: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.09)', overflow: 'hidden', marginTop: 16 },
+  progressTrack: { height: 5, borderRadius: 3, backgroundColor: theme.colors.track, overflow: 'hidden', marginTop: 16 },
   progressFill: { height: '100%', borderRadius: 3, backgroundColor: theme.colors.lime },
   steps: { marginTop: 10 },
   stepRow: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 13 },
@@ -505,12 +515,12 @@ const styles = StyleSheet.create({
   hero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: theme.colors.background },
   heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.74 },
   heroContent: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 23, paddingHorizontal: 20 },
-  heroEyebrow: { color: 'rgba(255,255,255,0.68)', fontSize: 10.5, fontWeight: '500' },
-  heroTime: { color: theme.colors.text, fontSize: 52, fontWeight: '200', letterSpacing: -2.8, marginTop: 5 },
-  heroTitle: { color: theme.colors.text, fontSize: 19, fontWeight: '600', marginTop: 3 },
-  heroMeta: { color: theme.colors.secondaryText, fontSize: 13, marginTop: 6 },
+  heroEyebrow: { color: theme.colors.heroSecondary, fontSize: 10.5, fontWeight: '500' },
+  heroTime: { color: theme.colors.heroText, fontSize: 52, fontWeight: '200', letterSpacing: -2.8, marginTop: 5 },
+  heroTitle: { color: theme.colors.heroText, fontSize: 19, fontWeight: '600', marginTop: 3 },
+  heroMeta: { color: theme.colors.heroSecondary, fontSize: 13, marginTop: 6 },
   durationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
-  durationText: { color: theme.colors.secondaryText, fontSize: 12 },
+  durationText: { color: theme.colors.heroSecondary, fontSize: 12 },
   dashboardBody: { paddingHorizontal: 16, marginTop: -8, gap: 12 },
   factStrip: { minHeight: 66, flexDirection: 'row', paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
   heroFact: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5 },
@@ -536,7 +546,7 @@ const styles = StyleSheet.create({
   daySelected: { backgroundColor: theme.colors.lime },
   dayWeek: { color: theme.colors.secondaryText, fontSize: 10, textTransform: 'capitalize' },
   dayNumber: { color: theme.colors.text, fontSize: 17, fontWeight: '600', marginTop: 4 },
-  dayTextSelected: { color: '#10110E' },
+  dayTextSelected: { color: theme.colors.onAccent },
   eventDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: theme.colors.lime, marginTop: 5 },
   eventDotSpacer: { height: 9 },
   agenda: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider },
@@ -561,16 +571,16 @@ const styles = StyleSheet.create({
   balance: { color: theme.colors.text, fontSize: 26, fontWeight: '500', letterSpacing: -0.8 },
   balanceUnit: { color: theme.colors.secondaryText, fontSize: 14 },
   balanceCaption: { color: theme.colors.tertiaryText, fontSize: 10, marginTop: 1 },
-  packageProgressTrack: { height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.09)', overflow: 'hidden', marginTop: 10 },
+  packageProgressTrack: { height: 4, borderRadius: 2, backgroundColor: theme.colors.track, overflow: 'hidden', marginTop: 10 },
   packageProgressFill: { height: '100%', borderRadius: 2 },
   packageTopUp: { minHeight: 39, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 5 },
   topUpLink: { color: theme.colors.secondaryText, fontSize: 11.5, fontWeight: '600' },
   discoveryTile: { minHeight: 42, paddingHorizontal: 2, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  discoveryText: { color: 'rgba(255,255,255,0.78)', fontSize: 11.5, fontWeight: '600', flexShrink: 1 },
+  discoveryText: { color: theme.colors.text, fontSize: 11.5, fontWeight: '600', flexShrink: 1 },
   statsCard: { paddingHorizontal: 2, paddingTop: 10 },
   statsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   chart: { height: 88, flexDirection: 'row', alignItems: 'flex-end', gap: 7, marginTop: 18, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.border },
-  chartBar: { flex: 1, minWidth: 4, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: 'rgba(255,255,255,0.34)' },
+  chartBar: { flex: 1, minWidth: 4, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: theme.colors.chartBar },
   metrics: { flexDirection: 'row', marginTop: 16 },
   metric: { flex: 1 },
   metricValue: { color: theme.colors.text, fontSize: 22, fontWeight: '600' },

@@ -1,7 +1,7 @@
 import { useServerDocumentContext } from 'expo-router/html';
 import type { PropsWithChildren } from 'react';
 
-const background = '#11120F';
+const background = '#F7F8F3';
 
 export default function RootHtml({ children }: PropsWithChildren) {
   const { htmlAttributes, bodyAttributes, headNodes, bodyNodes } = useServerDocumentContext();
@@ -14,7 +14,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="theme-color" content={background} />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <style>{`
           html, body, #root { height: 100%; width: 100%; }
           body { margin: 0; overflow: hidden; background: ${background}; }

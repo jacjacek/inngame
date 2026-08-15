@@ -4,8 +4,18 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, ThemeMode, useThemeStyles } from '@/theme';
 import { Divider, InfoRow, LoadingScreen, Screen, SectionTitle, ToggleRow } from '@/components/ui';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
+
+const themeOptions: { mode: ThemeMode; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { mode: 'light', label: 'Jasny', icon: 'sunny-outline' },
+  { mode: 'dark', label: 'Ciemny', icon: 'moon-outline' },
+  { mode: 'system', label: 'Systemowy', icon: 'contrast-outline' },
+];
 
 const levelNames: Record<string, string> = {
   '1.0': 'Początkujący',
@@ -20,6 +30,7 @@ const levelNames: Record<string, string> = {
 };
 
 export default function ProfileScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
   if (!store.hydrated) return <LoadingScreen />;
@@ -34,7 +45,7 @@ export default function ProfileScreen() {
   const subtitle = `${store.profile.city || 'Brak lokalizacji'} · ${store.profile.playingLevel ? store.profile.playingLevel.toLocaleLowerCase('pl') : 'ustaw poziom gry'}`;
 
   return (
-    <Screen contentStyle={styles.content}>
+    <Screen testID="profile-hydrated" contentStyle={styles.content}>
       <Pressable onPress={() => router.push('/profile-form')} style={styles.profileHeader}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{initials}</Text></View>
         <View style={styles.flex}>
@@ -58,6 +69,11 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Pressable>
+      </View>
+
+      <View style={styles.section}>
+        <SectionTitle title="Wygląd" />
+        <ThemeModeSelector />
       </View>
 
       <View style={styles.section}>
@@ -133,7 +149,7 @@ export default function ProfileScreen() {
               <Text style={styles.progressValue}>65</Text>
               <Text style={styles.progressLabel}>Treningi</Text>
             </View>
-            <View style={styles.trendValue}><Ionicons name="trending-up" size={15} color={theme.colors.lime} /><Text style={styles.trendText}>18%</Text></View>
+            <View style={styles.trendValue}><Ionicons name="trending-up" size={15} color={theme.colors.accentText} /><Text style={styles.trendText}>18%</Text></View>
           </View>
           <View style={styles.chart}>
             {[24, 38, 32, 52, 40, 62, 56, 78, 64, 84, 73, 91, 80].map((height, index) => <View key={index} style={[styles.bar, { height }]} />)}
@@ -150,6 +166,7 @@ export default function ProfileScreen() {
 }
 
 function ProgressRow({ icon, title, value }: { icon: React.ComponentProps<typeof Ionicons>['name']; title: string; value: string }) {
+  const { styles, theme } = useStyles();
   return (
     <View style={styles.progressRow}>
       <Ionicons name={icon} size={17} color={theme.colors.secondaryText} />
@@ -159,7 +176,43 @@ function ProgressRow({ icon, title, value }: { icon: React.ComponentProps<typeof
   );
 }
 
-const styles = StyleSheet.create({
+function ThemeModeSelector() {
+  const { styles, theme } = useStyles();
+  const store = useAppStore();
+
+  return (
+    <View>
+      <View accessibilityRole="radiogroup" style={styles.themeSelector}>
+        {themeOptions.map((option) => {
+          const active = store.themeMode === option.mode;
+          return (
+            <Pressable
+              key={option.mode}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active }}
+              aria-checked={active}
+              onPress={() => store.setThemeMode(option.mode)}
+              style={({ pressed }) => [
+                styles.themeOption,
+                active && styles.themeOptionActive,
+                pressed && styles.themeOptionPressed,
+              ]}>
+              <Ionicons
+                name={option.icon}
+                size={17}
+                color={active ? theme.colors.onAccent : theme.colors.secondaryText}
+              />
+              <Text style={[styles.themeOptionText, active && styles.themeOptionTextActive]}>{option.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={styles.themeHint}>Tryb systemowy podąża za ustawieniem Twojego urządzenia.</Text>
+    </View>
+  );
+}
+
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   content: { gap: 22, paddingHorizontal: 18, paddingTop: 18 },
   flex: { flex: 1 },
   profileHeader: { flexDirection: 'row', gap: 14, alignItems: 'center', paddingVertical: 4 },
@@ -168,18 +221,25 @@ const styles = StyleSheet.create({
   name: { color: theme.colors.text, fontSize: 22, fontWeight: '600' },
   subtitle: { color: theme.colors.secondaryText, fontSize: 13, marginTop: 4 },
   section: { gap: 8 },
+  themeSelector: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 16, backgroundColor: theme.colors.surfaceElevated },
+  themeOption: { flex: 1, minHeight: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
+  themeOptionActive: { backgroundColor: theme.colors.lime },
+  themeOptionPressed: { opacity: 0.72 },
+  themeOptionText: { color: theme.colors.secondaryText, fontSize: 11.5, fontWeight: '600' },
+  themeOptionTextActive: { color: theme.colors.onAccent },
+  themeHint: { color: theme.colors.tertiaryText, fontSize: 10.5, lineHeight: 15, marginTop: 7, marginLeft: 2 },
   levelRow: { minHeight: 66, paddingHorizontal: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   levelTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
   levelSubtitle: { color: theme.colors.secondaryText, fontSize: 12, marginTop: 4 },
   levelEdit: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  editText: { color: theme.colors.lime, fontSize: 13, fontWeight: '600' },
+  editText: { color: theme.colors.accentText, fontSize: 13, fontWeight: '600' },
   period: { color: theme.colors.secondaryText, fontSize: 10, fontWeight: '500' },
   progressContent: { paddingHorizontal: 2, paddingBottom: 4 },
   progressSummary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   progressValue: { color: theme.colors.text, fontSize: 35, fontWeight: '300' },
   progressLabel: { color: theme.colors.secondaryText, fontSize: 12, marginTop: 2 },
   trendValue: { flexDirection: 'row', gap: 5, alignItems: 'center' },
-  trendText: { color: theme.colors.lime, fontSize: 12, fontWeight: '600' },
+  trendText: { color: theme.colors.accentText, fontSize: 12, fontWeight: '600' },
   chart: { height: 101, flexDirection: 'row', gap: 7, alignItems: 'flex-end', marginVertical: 18, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.border },
   bar: { flex: 1, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: 'rgba(199,225,46,0.34)' },
   progressRows: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider, paddingTop: 6 },

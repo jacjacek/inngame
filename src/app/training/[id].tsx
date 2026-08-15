@@ -7,11 +7,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, Divider, endTime, formatDate, formatTime, InfoRow, LoadingScreen, ModalHeader, selectionHaptic, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 const blueCourt = require('@/assets/mymovio/blue-court.png');
 
 function TrainingDetailScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
@@ -52,7 +57,7 @@ function TrainingDetailScreen() {
       <ModalHeader title="Szczegóły treningu" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ImageBackground source={blueCourt} style={styles.hero} resizeMode="cover">
-          <LinearGradient colors={['rgba(4,8,9,0.08)', 'rgba(11,15,15,0.34)', theme.colors.background]} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['rgba(4,8,9,0.08)', 'rgba(11,15,15,0.34)', 'rgba(11,15,15,0.94)']} style={StyleSheet.absoluteFill} />
           <View style={styles.heroBody}>
             <View style={styles.confirmed}><Ionicons name="checkmark-circle" size={14} color={theme.colors.lime} /><Text style={styles.confirmedText}>Potwierdzony · {formatDate(training.start)}</Text></View>
             <Text style={styles.heroTitle}>{training.title}</Text>
@@ -126,6 +131,7 @@ function TrainingAction({
   icon: React.ComponentProps<typeof Ionicons>['name'];
   onPress: () => void;
 }) {
+  const { styles, theme } = useStyles();
   return (
     <Pressable
       onPress={() => {
@@ -140,6 +146,7 @@ function TrainingAction({
 }
 
 function Fact({ icon, label, value }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; value: string }) {
+  const { styles, theme } = useStyles();
   return (
     <View style={styles.fact}>
       <Ionicons name={icon} size={14} color={theme.colors.secondaryText} />
@@ -151,7 +158,7 @@ function Fact({ icon, label, value }: { icon: React.ComponentProps<typeof Ionico
 
 export default withSheetPage(TrainingDetailScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingBottom: 35 },
   flex: { flex: 1 },
@@ -159,9 +166,9 @@ const styles = StyleSheet.create({
   heroBody: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 48, paddingHorizontal: 20 },
   confirmed: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   confirmedText: { color: theme.colors.lime, fontSize: 10, fontWeight: '600' },
-  heroTitle: { color: theme.colors.text, fontSize: 29, fontWeight: '700', marginTop: 12, letterSpacing: -0.6 },
-  heroTime: { color: theme.colors.text, fontSize: 16, fontWeight: '600', marginTop: 8 },
-  heroVenue: { color: theme.colors.secondaryText, fontSize: 13, marginTop: 6 },
+  heroTitle: { color: theme.colors.heroText, fontSize: 29, fontWeight: '700', marginTop: 12, letterSpacing: -0.6 },
+  heroTime: { color: theme.colors.heroText, fontSize: 16, fontWeight: '600', marginTop: 8 },
+  heroVenue: { color: theme.colors.heroSecondary, fontSize: 13, marginTop: 6 },
   body: { paddingHorizontal: 16, paddingTop: 18, gap: 20 },
   factStrip: { flexDirection: 'row', paddingVertical: 15, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
   fact: { flex: 1, alignItems: 'center', gap: 4 },
@@ -174,7 +181,7 @@ const styles = StyleSheet.create({
   actionText: { color: theme.colors.text, fontSize: 13.5, fontWeight: '600' },
   actionPressed: { opacity: 0.55 },
   section: { gap: 8 },
-  sectionTitle: { color: 'rgba(255,255,255,0.86)', fontSize: 14, fontWeight: '600', marginLeft: 2 },
+  sectionTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '600', marginLeft: 2 },
   noteRow: { paddingHorizontal: 2, paddingVertical: 10, flexDirection: 'row', alignItems: 'flex-start', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   noteIcon: { width: 32, alignItems: 'center', justifyContent: 'center', paddingTop: 1 },
   noteLabel: { color: theme.colors.secondaryText, fontSize: 10, fontWeight: '500' },

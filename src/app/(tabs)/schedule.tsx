@@ -5,7 +5,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 
 import { Training } from '@/data/models';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
 import {
   AppButton,
   formatDate,
@@ -16,6 +16,10 @@ import {
   Screen,
   selectionHaptic,
 } from '@/components/ui';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 type Mode = 'list' | 'week' | 'month';
 
@@ -79,6 +83,7 @@ function monthCells(focusDate: Date) {
 }
 
 export default function ScheduleScreen() {
+  const { styles } = useStyles();
   const router = useRouter();
   const { trainings, hydrated } = useAppStore();
   const [mode, setMode] = useState<Mode>('list');
@@ -148,6 +153,7 @@ function CalendarModeBar({
   setMode: (mode: Mode) => void;
   setFocusDate: (date: Date) => void;
 }) {
+  const { styles, theme } = useStyles();
   const modes: { value: Mode; label: string }[] = [
     { value: 'list', label: 'Lista' },
     { value: 'week', label: 'Tydzień' },
@@ -225,6 +231,7 @@ function ListMode({
   trainings: Training[];
   open: (training: Training) => void;
 }) {
+  const { styles } = useStyles();
   const scrollRef = useRef<ScrollView>(null);
   const [showTodayButton, setShowTodayButton] = useState(false);
   const groups = useMemo(() => {
@@ -284,6 +291,7 @@ function WeekMode({
   setFocusDate: (date: Date) => void;
   open: (training: Training) => void;
 }) {
+  const { styles } = useStyles();
   const horizontalRef = useRef<ScrollView>(null);
   const [horizontalOffset, setHorizontalOffset] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -456,6 +464,7 @@ function MonthMode({
   setFocusDate: (date: Date) => void;
   open: (training: Training) => void;
 }) {
+  const { styles, theme } = useStyles();
   const cells = monthCells(focusDate);
   const selectedTrainings = trainingsForDay(trainings, focusDate);
   const today = startOfDay(new Date());
@@ -539,6 +548,7 @@ function MonthMode({
 }
 
 function TodayButton({ onPress }: { onPress: () => void }) {
+  const { styles } = useStyles();
   return (
     <Pressable
       accessibilityHint="Wraca do bieżącej daty"
@@ -552,6 +562,7 @@ function TodayButton({ onPress }: { onPress: () => void }) {
 }
 
 function SelectedDayRow({ training, open }: { training: Training; open: () => void }) {
+  const { styles, theme } = useStyles();
   return (
     <Pressable
       onPress={() => {
@@ -571,13 +582,14 @@ function SelectedDayRow({ training, open }: { training: Training; open: () => vo
 }
 
 function TrainingRow({ training, open }: { training: Training; open: () => void }) {
+  const { styles, theme } = useStyles();
   return (
     <Pressable
       onPress={() => {
         selectionHaptic();
         open();
       }}
-      android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+      android_ripple={{ color: theme.colors.pressed }}
       style={({ pressed }) => [styles.trainingRow, pressed && Platform.OS === 'ios' && styles.pressed]}>
       <View style={styles.trainingTime}>
         <Text style={styles.trainingTimeMain}>{formatTime(training.start)}</Text>
@@ -598,6 +610,7 @@ function TrainingRow({ training, open }: { training: Training; open: () => void 
 }
 
 function EmptyState() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   return (
     <View style={styles.empty}>
@@ -608,7 +621,7 @@ function EmptyState() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   flex: { flex: 1 },
   screenContent: { flex: 1, paddingHorizontal: 16, paddingTop: 8, gap: 10 },
   topChrome: { flexShrink: 0, gap: 8 },
@@ -618,11 +631,11 @@ const styles = StyleSheet.create({
   calendarModeBar: { height: 38, flexDirection: 'row', alignItems: 'center', gap: 8 },
   compactModePicker: { flex: 1.18, height: 38, padding: 2, flexDirection: 'row', borderRadius: 11, backgroundColor: theme.colors.surfaceElevated },
   compactModeButton: { flex: 1, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  compactModeButtonSelected: { backgroundColor: '#55564F' },
+  compactModeButtonSelected: { backgroundColor: theme.colors.surface },
   compactModeText: { color: theme.colors.secondaryText, fontSize: 10.5, fontWeight: '600' },
   compactModeTextSelected: { color: theme.colors.text },
   periodSpacer: { flex: 0.82 },
-  periodSwitcher: { flex: 0.82, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.035)' },
+  periodSwitcher: { flex: 0.82, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 11, backgroundColor: theme.colors.surfaceElevated },
   periodArrow: { width: 28, height: 38, alignItems: 'center', justifyContent: 'center' },
   periodTitleButton: { flex: 1, height: 38, alignItems: 'center', justifyContent: 'center' },
   periodTitle: { color: theme.colors.text, fontSize: 10.5, fontWeight: '600', textTransform: 'capitalize' },
@@ -637,7 +650,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(35,36,33,0.94)',
+    backgroundColor: theme.colors.surfaceGlass,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.border,
   },
   todayButtonPressed: { opacity: 0.72 },
   todayButtonText: { color: theme.colors.secondaryText, fontSize: 12, fontWeight: '600' },
@@ -663,24 +678,24 @@ const styles = StyleSheet.create({
   weekHeader: { height: 58, flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.border, backgroundColor: theme.colors.surfaceSoft },
   weekTimeHeader: { width: TIME_COLUMN_WIDTH, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: theme.colors.border },
   weekDayHeader: { width: DAY_COLUMN_WIDTH, alignItems: 'center', justifyContent: 'center', borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: theme.colors.divider },
-  weekDayHeaderSelected: { backgroundColor: 'rgba(255,255,255,0.035)' },
+  weekDayHeaderSelected: { backgroundColor: theme.colors.accentSoft },
   weekdayLabel: { color: theme.colors.secondaryText, fontSize: 9, fontWeight: '500', textTransform: 'capitalize' },
   weekdayNumberCircle: { width: 24, height: 24, marginTop: 2, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   weekdayNumberCircleSelected: { backgroundColor: theme.colors.lime },
   weekdayNumber: { color: theme.colors.text, fontSize: 12, fontWeight: '600' },
-  selectedDayNumber: { color: '#11120F' },
-  todayNumber: { color: theme.colors.lime },
+  selectedDayNumber: { color: theme.colors.onAccent },
+  todayNumber: { color: theme.colors.accentText },
   weekEventDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: theme.colors.lime, marginTop: 2 },
-  weekEventDotSelected: { backgroundColor: '#11120F' },
+  weekEventDotSelected: { backgroundColor: theme.colors.onAccent },
   weekVertical: { flex: 1 },
   weekGrid: { width: WEEK_CANVAS_WIDTH, height: WEEK_CANVAS_HEIGHT, position: 'relative' },
   hourLine: { position: 'absolute', left: 0, width: WEEK_CANVAS_WIDTH, height: 1, flexDirection: 'row', alignItems: 'center' },
   hourLabel: { width: TIME_COLUMN_WIDTH - 7, color: theme.colors.tertiaryText, fontSize: 8, fontVariant: ['tabular-nums'], textAlign: 'right', transform: [{ translateY: -5 }] },
-  hourRule: { height: StyleSheet.hairlineWidth, flex: 1, marginLeft: 7, backgroundColor: 'rgba(255,255,255,0.075)' },
-  dayColumn: { position: 'absolute', top: 0, bottom: 0, width: DAY_COLUMN_WIDTH, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: 'rgba(255,255,255,0.05)' },
-  dayColumnSelected: { backgroundColor: 'rgba(255,255,255,0.018)' },
-  weekEvent: { position: 'absolute', flexDirection: 'row', borderRadius: 6, overflow: 'hidden', backgroundColor: 'rgba(41,42,39,0.96)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(199,225,46,0.20)' },
-  weekEventCoach: { backgroundColor: 'rgba(87,184,242,0.09)', borderColor: 'rgba(87,184,242,0.24)' },
+  hourRule: { height: StyleSheet.hairlineWidth, flex: 1, marginLeft: 7, backgroundColor: theme.colors.divider },
+  dayColumn: { position: 'absolute', top: 0, bottom: 0, width: DAY_COLUMN_WIDTH, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: theme.colors.divider },
+  dayColumnSelected: { backgroundColor: theme.colors.calendarSelection },
+  weekEvent: { position: 'absolute', flexDirection: 'row', borderRadius: 6, overflow: 'hidden', backgroundColor: theme.colors.calendarEvent, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.accentBorder },
+  weekEventCoach: { backgroundColor: theme.colors.skySoft, borderColor: theme.colors.skyBorder },
   weekEventAccent: { width: 2.5, backgroundColor: theme.colors.lime },
   weekEventAccentCoach: { backgroundColor: theme.colors.sky },
   weekEventContent: { flex: 1, paddingHorizontal: 6, paddingVertical: 5 },
@@ -691,16 +706,16 @@ const styles = StyleSheet.create({
   monthWeekday: { width: '14.2857%', textAlign: 'center', color: theme.colors.secondaryText, fontSize: 10, fontWeight: '600' },
   monthGrid: { flexDirection: 'row', flexWrap: 'wrap', borderTopWidth: StyleSheet.hairlineWidth, borderLeftWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
   monthCell: { width: '14.2857%', height: 57, paddingHorizontal: 3, paddingVertical: 3, borderRightWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
-  monthEmptyCell: { backgroundColor: 'rgba(255,255,255,0.008)' },
-  monthCellSelected: { backgroundColor: 'rgba(255,255,255,0.025)' },
+  monthEmptyCell: { backgroundColor: theme.colors.calendarEmpty },
+  monthCellSelected: { backgroundColor: theme.colors.accentSoft },
   monthNumberCircle: { width: 19, height: 19, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   monthNumberCircleSelected: { backgroundColor: theme.colors.lime },
   monthNumber: { color: theme.colors.text, fontSize: 10, fontWeight: '600' },
   monthEvent: { height: 10, marginTop: 2, borderRadius: 2, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', backgroundColor: 'rgba(199,225,46,0.075)' },
-  monthEventCoach: { backgroundColor: 'rgba(255,255,255,0.035)' },
+  monthEventCoach: { backgroundColor: theme.colors.skySoft },
   monthEventAccent: { width: 2, alignSelf: 'stretch', backgroundColor: theme.colors.lime },
   monthEventAccentCoach: { backgroundColor: theme.colors.sky },
-  monthEventText: { flex: 1, color: 'rgba(255,255,255,0.82)', fontSize: 7, fontWeight: '600', paddingHorizontal: 2 },
+  monthEventText: { flex: 1, color: theme.colors.text, fontSize: 7, fontWeight: '600', paddingHorizontal: 2 },
   moreEvents: { color: theme.colors.secondaryText, fontSize: 8, fontWeight: '600', marginLeft: 3, marginTop: 1 },
   selectedDayTitle: { color: theme.colors.secondaryText, fontSize: 10.5, fontWeight: '500', textTransform: 'capitalize', marginTop: 4 },
   selectedDayRows: { marginHorizontal: 2 },

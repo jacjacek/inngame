@@ -20,10 +20,15 @@ import { AvailabilityOffer, doesOfferMatchPreference, offerTimeLabel, preference
 import { conversations, trainers } from '@/data/models';
 import { conversationPhotos } from '@/data/trainer-media';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
 import { AppButton, endTime, formatDate, formatTime, IconButton, LoadingScreen, selectionHaptic } from '@/components/ui';
 
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
+
 export default function ChatScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId?: string }>();
   const store = useAppStore();
@@ -146,7 +151,7 @@ export default function ChatScreen() {
                 setShowList(false);
               }}
               style={({ pressed }) => [styles.pushPreview, pressed && styles.pressed]}>
-              <View style={styles.pushIcon}><Ionicons name="flash" size={18} color="#11120F" /></View>
+              <View style={styles.pushIcon}><Ionicons name="flash" size={18} color={theme.colors.onAccent} /></View>
               <View style={styles.flex}>
                 <Text style={styles.pushEyebrow}>NOWY TERMIN · {(matchedTrainer?.name ?? 'TRENER').toLocaleUpperCase('pl')}</Text>
                 <Text numberOfLines={1} style={styles.pushTitle}>{offerTimeLabel(matchedUnreadOffer)}</Text>
@@ -167,7 +172,7 @@ export default function ChatScreen() {
                   store.markConversationRead(item.id);
                   setShowList(false);
                 }}
-                android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+                android_ripple={{ color: theme.colors.pressed }}
                 style={({ pressed }) => [styles.conversationRow, pressed && Platform.OS === 'ios' && styles.pressed]}>
                 <Avatar initials={item.initials} source={conversationPhotos[item.id]} />
                 <View style={styles.flex}>
@@ -343,7 +348,7 @@ export default function ChatScreen() {
               disabled={!draft.trim()}
               onPress={send}
               style={[styles.sendButton, !draft.trim() && { opacity: 0.35 }]}>
-              <Ionicons name={Platform.OS === 'ios' ? 'arrow-up' : 'send'} size={18} color="#11120F" />
+              <Ionicons name={Platform.OS === 'ios' ? 'arrow-up' : 'send'} size={18} color={theme.colors.onAccent} />
             </Pressable>
           </View>
         </View>
@@ -353,6 +358,7 @@ export default function ChatScreen() {
 }
 
 function AvailabilityOfferCard({ offer, referenceTime }: { offer: AvailabilityOffer; referenceTime: number }) {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
   const preference = store.availabilityPreferences[offer.trainerId];
@@ -446,6 +452,7 @@ function ComposerAction({
   onPress: () => void;
   title: string;
 }) {
+  const { styles, theme } = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -465,6 +472,7 @@ function ComposerAction({
 }
 
 function Avatar({ initials, source, compact, tiny }: { initials: string; source?: ImageSourcePropType; compact?: boolean; tiny?: boolean }) {
+  const { styles } = useStyles();
   const size = tiny ? 27 : compact ? 36 : 48;
   return (
     <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}>
@@ -475,7 +483,7 @@ function Avatar({ initials, source, compact, tiny }: { initials: string; source?
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   pressed: { opacity: 0.72 },
@@ -485,9 +493,9 @@ const styles = StyleSheet.create({
   search: { marginHorizontal: 16, height: 46, borderRadius: 15, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: theme.colors.surfaceElevated },
   searchInput: { flex: 1, color: theme.colors.text, fontSize: 16 },
   listContent: { padding: 16, gap: 8, paddingBottom: 42 },
-  pushPreview: { minHeight: 82, padding: 13, marginBottom: 8, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: '#24291B', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(199,225,46,0.28)' },
+  pushPreview: { minHeight: 82, padding: 13, marginBottom: 8, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: theme.colors.accentSoft, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.accentBorder },
   pushIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.lime },
-  pushEyebrow: { color: theme.colors.lime, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.7 },
+  pushEyebrow: { color: theme.colors.accentText, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.7 },
   pushTitle: { color: theme.colors.text, fontSize: 13, fontWeight: '600', marginTop: 4, textTransform: 'capitalize' },
   pushText: { color: theme.colors.secondaryText, fontSize: 10.5, marginTop: 3 },
   sectionLabel: { color: theme.colors.secondaryText, fontSize: 11, fontWeight: '500', marginLeft: 3 },
@@ -497,10 +505,10 @@ const styles = StyleSheet.create({
   conversationTime: { color: theme.colors.tertiaryText, fontSize: 11 },
   conversationRole: { color: theme.colors.secondaryText, fontSize: 10, fontWeight: '500', marginTop: 3 },
   conversationPreview: { color: theme.colors.secondaryText, fontSize: 12.5, marginTop: 4 },
-  avatar: { backgroundColor: '#3A3B35', alignItems: 'center', justifyContent: 'center' },
+  avatar: { backgroundColor: theme.colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: theme.colors.text, fontSize: 14, fontWeight: '600' },
   badge: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: theme.colors.lime, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { color: '#11120F', fontSize: 11, fontWeight: '700' },
+  badgeText: { color: theme.colors.onAccent, fontSize: 11, fontWeight: '700' },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: theme.colors.divider, marginLeft: 74 },
   chatHeader: { height: 62, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   chatPerson: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -516,17 +524,17 @@ const styles = StyleSheet.create({
   messageRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 7, marginTop: 4, paddingRight: 48 },
   messageRowMe: { justifyContent: 'flex-end', paddingRight: 0, paddingLeft: 48 },
   messageBubble: { maxWidth: '90%', paddingHorizontal: 13, paddingTop: 9, paddingBottom: 7, borderRadius: 18 },
-  myBubble: { backgroundColor: '#3A4520', borderBottomRightRadius: 5 },
+  myBubble: { backgroundColor: theme.colors.messageMine, borderBottomRightRadius: 5 },
   theirBubble: { backgroundColor: theme.colors.surfaceElevated, borderBottomLeftRadius: 5 },
   messageText: { color: theme.colors.text, fontSize: 14.5, lineHeight: 20 },
   messageTime: { color: theme.colors.tertiaryText, fontSize: 9, alignSelf: 'flex-end', marginTop: 4 },
   offerWrap: { marginTop: 18, gap: 9 },
-  offerCard: { padding: 16, gap: 10, borderRadius: 21, backgroundColor: '#20231B', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(199,225,46,0.26)' },
-  offerCardReserved: { backgroundColor: '#1A2222', borderColor: 'rgba(87,184,242,0.28)' },
+  offerCard: { padding: 16, gap: 10, borderRadius: 21, backgroundColor: theme.colors.accentSoft, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.accentBorder },
+  offerCardReserved: { backgroundColor: theme.colors.skySoft, borderColor: theme.colors.skyBorder },
   offerEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   offerDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: theme.colors.lime },
   offerDotInactive: { backgroundColor: theme.colors.tertiaryText },
-  offerEyebrow: { color: theme.colors.lime, fontSize: 9.5, fontWeight: '700', letterSpacing: 1 },
+  offerEyebrow: { color: theme.colors.accentText, fontSize: 9.5, fontWeight: '700', letterSpacing: 1 },
   offerEyebrowReserved: { color: theme.colors.sky },
   offerTime: { color: theme.colors.text, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, textTransform: 'capitalize' },
   offerPlace: { color: theme.colors.secondaryText, fontSize: 13 },
@@ -557,7 +565,7 @@ const styles = StyleSheet.create({
   noteDockText: { color: theme.colors.secondaryText, fontSize: 11.5, marginTop: 2 },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   addButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  addButtonActive: { backgroundColor: 'rgba(199,225,46,0.1)' },
+  addButtonActive: { backgroundColor: theme.colors.accentSoft },
   composerInput: { flex: 1, minHeight: 38, maxHeight: 96, borderRadius: 19, paddingHorizontal: 14, paddingTop: 8, paddingBottom: 8, color: theme.colors.text, fontSize: 15, lineHeight: 20, backgroundColor: theme.colors.surfaceElevated },
   sendButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: theme.colors.lime, alignItems: 'center', justifyContent: 'center' },
   composerMenu: {
@@ -571,16 +579,16 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surfaceElevated,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
+    shadowColor: theme.colors.shadow,
+    shadowOpacity: 0.16,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 12,
   },
   composerMenuAction: { minHeight: 48, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  composerMenuActionPressed: { backgroundColor: 'rgba(255,255,255,0.06)' },
+  composerMenuActionPressed: { backgroundColor: theme.colors.pressed },
   composerMenuActionDisabled: { opacity: 0.45 },
-  composerMenuIcon: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(199,225,46,0.08)' },
+  composerMenuIcon: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.accentSoft },
   composerMenuText: { flex: 1, color: theme.colors.text, fontSize: 13.5, fontWeight: '500' },
   composerMenuTextDisabled: { color: theme.colors.tertiaryText },
   composerMenuDivider: { height: StyleSheet.hairlineWidth, marginLeft: 50, backgroundColor: theme.colors.divider },

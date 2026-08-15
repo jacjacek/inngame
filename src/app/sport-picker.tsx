@@ -5,17 +5,21 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Divider, ModalHeader, selectionHaptic, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
 
-const sports = [
-  { name: 'Tenis', icon: 'tennisball' as const, color: theme.colors.lime },
-  { name: 'Squash', icon: 'fitness' as const, color: theme.colors.coral },
-  { name: 'Padel', icon: 'tennisball-outline' as const, color: theme.colors.sky },
-];
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 function SportPickerScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
+  const sports = [
+    { name: 'Tenis', icon: 'tennisball' as const, color: theme.colors.accentText },
+    { name: 'Squash', icon: 'fitness' as const, color: theme.colors.coral },
+    { name: 'Padel', icon: 'tennisball-outline' as const, color: theme.colors.sky },
+  ];
   return (
     <View style={styles.page}>
       <ModalHeader title="Wybierz sport" />
@@ -35,7 +39,7 @@ function SportPickerScreen() {
                   style={styles.row}>
                   <View style={[styles.icon, { backgroundColor: `${sport.color}20` }]}><Ionicons name={sport.icon} size={22} color={sport.color} /></View>
                   <Text style={styles.name}>{sport.name}</Text>
-                  {selected ? <Ionicons name="checkmark-circle" size={22} color={theme.colors.lime} /> : null}
+                  {selected ? <Ionicons name="checkmark-circle" size={22} color={theme.colors.accentText} /> : null}
                 </Pressable>
                 {index < sports.length - 1 ? <Divider inset={56} /> : null}
               </View>
@@ -49,7 +53,7 @@ function SportPickerScreen() {
 
 export default withSheetPage(SportPickerScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 16, gap: 14 },
   subtitle: { color: theme.colors.secondaryText, fontSize: 13, lineHeight: 19 },

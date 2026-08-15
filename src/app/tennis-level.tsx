@@ -6,7 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, ModalHeader, selectionHaptic, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 const levels = [
   ['1.0', 'Początkujący', 'Dopiero poznajesz zasady i podstawowe uderzenia.'],
@@ -21,6 +25,7 @@ const levels = [
 ] as const;
 
 function TennisLevelScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
   const [selected, setSelected] = useState(store.tennisLevel);
@@ -37,7 +42,7 @@ function TennisLevelScreen() {
                 <Pressable onPress={() => { selectionHaptic(); setSelected(score); }} style={styles.level}>
                   <View style={[styles.score, active && styles.scoreSelected]}><Text style={[styles.scoreText, active && styles.dark]}>{score}</Text></View>
                   <View style={styles.flex}><Text style={styles.title}>{title}</Text><Text style={styles.detail}>{detail}</Text></View>
-                  {active ? <Ionicons name="checkmark-circle" size={22} color={theme.colors.lime} /> : null}
+                  {active ? <Ionicons name="checkmark-circle" size={22} color={theme.colors.accentText} /> : null}
                 </Pressable>
                 {index < levels.length - 1 ? <View style={styles.levelDivider} /> : null}
               </View>
@@ -54,7 +59,7 @@ function TennisLevelScreen() {
 
 export default withSheetPage(TennisLevelScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   content: { padding: 16, gap: 16, paddingBottom: 30 },
@@ -64,7 +69,7 @@ const styles = StyleSheet.create({
   score: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surfaceElevated },
   scoreSelected: { backgroundColor: theme.colors.lime },
   scoreText: { color: theme.colors.text, fontSize: 14, fontWeight: '600' },
-  dark: { color: '#11120F' },
+  dark: { color: theme.colors.onAccent },
   title: { color: theme.colors.text, fontSize: 15, fontWeight: '600' },
   detail: { color: theme.colors.secondaryText, fontSize: 11.5, lineHeight: 16, marginTop: 4 },
   bottom: { paddingHorizontal: 16, paddingTop: 10, backgroundColor: theme.colors.surfaceSoft, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider },

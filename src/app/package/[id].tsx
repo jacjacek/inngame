@@ -5,9 +5,14 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton, Card, Divider, formatDate, InfoRow, LoadingScreen, ModalHeader, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 function PackageDetailsScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
@@ -94,6 +99,7 @@ function PackageDetailsScreen() {
 }
 
 function Metric({ icon, value, label }: { icon: React.ComponentProps<typeof Ionicons>['name']; value: string; label: string }) {
+  const { styles, theme } = useStyles();
   return (
     <View style={styles.metric}>
       <Ionicons name={icon} size={18} color={theme.colors.secondaryText} />
@@ -105,22 +111,22 @@ function Metric({ icon, value, label }: { icon: React.ComponentProps<typeof Ioni
 
 export default withSheetPage(PackageDetailsScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   content: { padding: 16, gap: 18, paddingBottom: 40 },
   hero: { padding: 18 },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  icon: { width: 46, height: 46, borderRadius: 14, backgroundColor: 'rgba(199,225,46,0.12)', alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 46, height: 46, borderRadius: 14, backgroundColor: theme.colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
   scope: { color: theme.colors.secondaryText, fontSize: 10, fontWeight: '500' },
   name: { color: theme.colors.text, fontSize: 18, fontWeight: '600', marginTop: 4 },
-  active: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999, backgroundColor: 'rgba(152,215,91,0.13)' },
+  active: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 999, backgroundColor: theme.colors.successSoft },
   activeText: { color: theme.colors.success, fontSize: 9, fontWeight: '600' },
   balanceRow: { marginTop: 24, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   balance: { color: theme.colors.text, fontSize: 40, fontWeight: '300', letterSpacing: -1.5 },
   unit: { fontSize: 17 },
   total: { color: theme.colors.secondaryText, fontSize: 12 },
-  track: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.09)', overflow: 'hidden', marginTop: 16 },
+  track: { height: 6, borderRadius: 3, backgroundColor: theme.colors.track, overflow: 'hidden', marginTop: 16 },
   fill: { height: '100%', backgroundColor: theme.colors.lime, borderRadius: 3 },
   progressCaption: { color: theme.colors.secondaryText, fontSize: 11.5, marginTop: 9 },
   metrics: { flexDirection: 'row', paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
@@ -129,7 +135,7 @@ const styles = StyleSheet.create({
   metricValue: { color: theme.colors.text, fontSize: 15, fontWeight: '600', marginTop: 12 },
   metricLabel: { color: theme.colors.secondaryText, fontSize: 10.5, marginTop: 3 },
   section: { gap: 8 },
-  sectionTitle: { color: 'rgba(255,255,255,0.86)', fontSize: 14, fontWeight: '600', marginLeft: 2 },
+  sectionTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '600', marginLeft: 2 },
   purchaseRow: { minHeight: 91, paddingHorizontal: 2, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 11 },
   purchaseIcon: { width: 35, height: 35, borderRadius: 11, backgroundColor: theme.colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   purchaseHours: { color: theme.colors.text, fontSize: 14, fontWeight: '600' },

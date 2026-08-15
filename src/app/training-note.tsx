@@ -6,9 +6,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, Field, ModalHeader, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 function TrainingNoteScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
   const [note, setNote] = useState(store.trainingNote);
@@ -32,7 +37,7 @@ function TrainingNoteScreen() {
 
 export default withSheetPage(TrainingNoteScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   content: { padding: 16, gap: 18 },

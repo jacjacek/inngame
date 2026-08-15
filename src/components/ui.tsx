@@ -26,7 +26,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { MotionPressable } from '@/components/motion';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -62,7 +66,9 @@ export function Screen({
   children,
   scroll = true,
   contentStyle,
-}: PropsWithChildren<{ scroll?: boolean; contentStyle?: StyleProp<ViewStyle> }>) {
+  testID,
+}: PropsWithChildren<{ scroll?: boolean; contentStyle?: StyleProp<ViewStyle>; testID?: string }>) {
+  const { styles } = useStyles();
   const content = scroll ? (
     <ScrollView
       style={styles.flex}
@@ -75,13 +81,14 @@ export function Screen({
   ) : (
     <View style={[styles.flex, contentStyle]}>{children}</View>
   );
-  return <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>{content}</SafeAreaView>;
+  return <SafeAreaView testID={testID} style={styles.screen} edges={['top', 'left', 'right']}>{content}</SafeAreaView>;
 }
 
 export function LoadingScreen() {
+  const { styles, theme } = useStyles();
   return (
     <View style={[styles.screen, styles.center]}>
-      <ActivityIndicator color={theme.colors.lime} />
+      <ActivityIndicator color={theme.colors.accentText} />
     </View>
   );
 }
@@ -95,6 +102,7 @@ export function Header({
   subtitle?: string;
   action?: ReactNode;
 }) {
+  const { styles } = useStyles();
   return (
     <View style={styles.header}>
       <View style={styles.flex}>
@@ -107,6 +115,7 @@ export function Header({
 }
 
 export function SheetPage({ children }: PropsWithChildren) {
+  const { styles } = useStyles();
   const entrance = useSharedValue(Platform.OS === 'web' ? 0 : 1);
   const reduceMotion = useReducedMotion();
 
@@ -145,6 +154,7 @@ export function withSheetPage(Component: React.ComponentType) {
 }
 
 export function ModalHeader({ title, doneLabel, onDone, trailing }: { title: string; doneLabel?: string; onDone?: () => void; trailing?: ReactNode }) {
+  const { styles } = useStyles();
   const router = useRouter();
   return (
     <SafeAreaView edges={['top']} style={styles.modalHeaderSafe}>
@@ -162,10 +172,12 @@ export function ModalHeader({ title, doneLabel, onDone, trailing }: { title: str
 }
 
 export function Card({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
+  const { styles } = useStyles();
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
 export function SectionTitle({ title, action }: { title: string; action?: ReactNode }) {
+  const { styles } = useStyles();
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -189,11 +201,12 @@ export function AppButton({
   disabled?: boolean;
   compact?: boolean;
 }) {
+  const { styles, theme } = useStyles();
   return (
     <MotionPressable
       accessibilityRole="button"
       disabled={disabled}
-      android_ripple={{ color: 'rgba(255,255,255,0.12)' }}
+      android_ripple={{ color: theme.colors.pressed }}
       pressedScale={0.985}
       onPress={() => {
         if (variant === 'primary') actionHaptic();
@@ -209,7 +222,7 @@ export function AppButton({
         variant === 'danger' && styles.buttonDanger,
         disabled && styles.disabled,
       ]}>
-      {icon ? <Ionicons name={icon} size={18} color={variant === 'primary' ? '#12130F' : variant === 'danger' ? theme.colors.danger : theme.colors.text} /> : null}
+      {icon ? <Ionicons name={icon} size={18} color={variant === 'primary' ? theme.colors.onAccent : variant === 'danger' ? theme.colors.danger : theme.colors.text} /> : null}
       <Text style={[
         styles.buttonText,
         variant === 'primary' && styles.buttonTextPrimary,
@@ -220,12 +233,13 @@ export function AppButton({
 }
 
 export function IconButton({ icon, onPress, accessibilityLabel }: { icon: IconName; onPress: () => void; accessibilityLabel: string }) {
+  const { styles, theme } = useStyles();
   return (
     <MotionPressable
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       hitSlop={10}
-      android_ripple={{ color: 'rgba(255,255,255,0.12)', borderless: true }}
+      android_ripple={{ color: theme.colors.pressed, borderless: true }}
       pressedScale={0.92}
       onPress={() => {
         selectionHaptic();
@@ -238,9 +252,10 @@ export function IconButton({ icon, onPress, accessibilityLabel }: { icon: IconNa
 }
 
 export function Pill({ label, active, onPress, icon }: { label: string; active?: boolean; onPress?: () => void; icon?: IconName }) {
+  const { styles, theme } = useStyles();
   const content = (
     <>
-      {icon ? <Ionicons name={icon} size={15} color={active ? '#11120F' : theme.colors.secondaryText} /> : null}
+      {icon ? <Ionicons name={icon} size={15} color={active ? theme.colors.onAccent : theme.colors.secondaryText} /> : null}
       <Text style={[styles.pillText, active && styles.pillTextActive]}>{label}</Text>
     </>
   );
@@ -276,6 +291,7 @@ export function InfoRow({
   destructive?: boolean;
   flat?: boolean;
 }) {
+  const { styles, theme } = useStyles();
   const content = (
     <>
       <View style={styles.infoIcon}><Ionicons name={icon} size={18} color={destructive ? theme.colors.danger : theme.colors.secondaryText} /></View>
@@ -289,7 +305,7 @@ export function InfoRow({
   if (!onPress) return <View style={[styles.infoRow, flat && styles.flatListRow]}>{content}</View>;
   return (
     <MotionPressable
-      android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
+      android_ripple={{ color: theme.colors.pressed }}
       pressedScale={0.99}
       onPress={() => {
         selectionHaptic();
@@ -302,6 +318,7 @@ export function InfoRow({
 }
 
 export function Divider({ inset = 54 }: { inset?: number }) {
+  const { styles } = useStyles();
   return <View style={[styles.divider, { marginLeft: inset }]} />;
 }
 
@@ -318,6 +335,7 @@ export function ToggleRow({
   onValueChange: (value: boolean) => void;
   flat?: boolean;
 }) {
+  const { styles, theme } = useStyles();
   return (
     <View style={[styles.toggleRow, flat && styles.flatListRow]}>
       <View style={styles.flex}>
@@ -332,14 +350,15 @@ export function ToggleRow({
           selectionHaptic();
           onValueChange(next);
         }}
-        trackColor={{ false: '#43443F', true: theme.colors.lime }}
-        thumbColor={Platform.OS === 'android' ? (value ? '#1A1B15' : '#D5D5D0') : undefined}
+        trackColor={{ false: theme.colors.switchTrackOff, true: theme.colors.lime }}
+        thumbColor={Platform.OS === 'android' ? (value ? theme.colors.onAccent : theme.colors.switchThumbOff) : undefined}
       />
     </View>
   );
 }
 
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
+  const { styles, theme } = useStyles();
   return (
     <View style={styles.fieldWrap}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -362,6 +381,7 @@ export function Segmented<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const { styles } = useStyles();
   return (
     <View style={styles.segmented}>
       {values.map((item) => (
@@ -396,7 +416,7 @@ export function endTime(training: { start: string; durationMinutes: number }) {
   return new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit' }).format(end);
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   flex: { flex: 1 },
   center: { alignItems: 'center', justifyContent: 'center' },
   screen: { flex: 1, backgroundColor: theme.colors.background },
@@ -406,31 +426,31 @@ const styles = StyleSheet.create({
   headerSubtitle: { color: theme.colors.secondaryText, fontSize: 14, marginTop: 3 },
   modalHeaderSafe: { backgroundColor: theme.colors.background },
   sheetBackdrop: { flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-end' },
-  sheetBackdropTint: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)' },
-  sheetPanel: { height: '75%', maxHeight: '75%', overflow: 'hidden', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: theme.colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border },
+  sheetBackdropTint: { ...StyleSheet.absoluteFill, backgroundColor: theme.colors.scrim },
+  sheetPanel: { height: '75%', maxHeight: '75%', overflow: 'hidden', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: theme.colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, shadowColor: theme.colors.shadow, shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: -8 } },
   modalHeader: { height: 58, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   modalTitle: { color: theme.colors.text, fontSize: 17, fontWeight: '600' },
-  doneText: { color: theme.colors.lime, fontSize: 16, fontWeight: '600' },
+  doneText: { color: theme.colors.accentText, fontSize: 16, fontWeight: '600' },
   headerSpacer: { width: 44 },
-  card: { backgroundColor: theme.colors.surfaceSoft, borderRadius: 16, overflow: 'hidden' },
+  card: { backgroundColor: theme.colors.surfaceSoft, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, overflow: 'hidden' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2, marginTop: 8 },
-  sectionTitle: { color: 'rgba(255,255,255,0.88)', fontSize: 15, fontWeight: '600' },
+  sectionTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '600' },
   button: { minHeight: 52, paddingHorizontal: 18, borderRadius: 14, flexDirection: 'row', gap: 9, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   buttonCompact: { minHeight: 42, paddingHorizontal: 14, borderRadius: 12 },
   buttonPrimary: { backgroundColor: theme.colors.lime },
-  buttonSecondary: { backgroundColor: 'rgba(255,255,255,0.055)' },
+  buttonSecondary: { backgroundColor: theme.colors.surfaceElevated },
   buttonGhost: { backgroundColor: 'transparent' },
-  buttonDanger: { backgroundColor: 'rgba(255,107,98,0.09)' },
+  buttonDanger: { backgroundColor: theme.colors.dangerSoft },
   buttonText: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
-  buttonTextPrimary: { color: '#12130F' },
+  buttonTextPrimary: { color: theme.colors.onAccent },
   buttonTextDanger: { color: theme.colors.danger },
   disabled: { opacity: 0.42 },
   pressed: { opacity: 0.72 },
   iconButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  pill: { minHeight: 34, paddingHorizontal: 12, borderRadius: theme.radius.pill, backgroundColor: theme.colors.surfaceSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  pill: { minHeight: 34, paddingHorizontal: 12, borderRadius: theme.radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   pillActive: { backgroundColor: theme.colors.lime, borderColor: theme.colors.lime },
   pillText: { color: theme.colors.secondaryText, fontSize: 13, fontWeight: '600' },
-  pillTextActive: { color: '#10110E' },
+  pillTextActive: { color: theme.colors.onAccent },
   infoRow: { minHeight: 62, paddingHorizontal: 16, paddingVertical: 11, flexDirection: 'row', alignItems: 'center', gap: 12, overflow: 'hidden' },
   infoIcon: { width: 26, alignItems: 'center' },
   infoTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '500' },
@@ -440,11 +460,11 @@ const styles = StyleSheet.create({
   flatListRow: { paddingHorizontal: 2 },
   fieldWrap: { gap: 7 },
   fieldLabel: { color: theme.colors.secondaryText, fontSize: 13, fontWeight: '600', marginLeft: 2 },
-  field: { minHeight: 52, borderRadius: 12, paddingHorizontal: 15, color: theme.colors.text, fontSize: 16, backgroundColor: theme.colors.surfaceSoft },
+  field: { minHeight: 52, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, paddingHorizontal: 15, color: theme.colors.text, fontSize: 16, backgroundColor: theme.colors.surface },
   fieldMultiline: { minHeight: 120, paddingTop: 14, textAlignVertical: 'top' },
   segmented: { flexDirection: 'row', padding: 3, borderRadius: 13, backgroundColor: theme.colors.surfaceElevated },
   segment: { flex: 1, minHeight: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
-  segmentSelected: { backgroundColor: '#55564F' },
+  segmentSelected: { backgroundColor: theme.colors.surface },
   segmentText: { color: theme.colors.secondaryText, fontSize: 13, fontWeight: '600' },
   segmentTextSelected: { color: theme.colors.text },
 });

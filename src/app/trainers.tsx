@@ -6,9 +6,14 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { trainers } from '@/data/models';
 import { trainerPhotos } from '@/data/trainer-media';
 import { ModalHeader, Pill, selectionHaptic, withSheetPage } from '@/components/ui';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 function TrainersScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { purpose } = useLocalSearchParams<{ purpose?: string }>();
   const [query, setQuery] = useState('');
@@ -80,12 +85,13 @@ function TrainersScreen() {
 }
 
 function Stat({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string }) {
+  const { styles, theme } = useStyles();
   return <View style={styles.stat}><Ionicons name={icon} size={13} color={theme.colors.secondaryText} /><Text style={styles.statText}>{text}</Text></View>;
 }
 
 export default withSheetPage(TrainersScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 16, gap: 15, paddingBottom: 40 },
   flex: { flex: 1 },
@@ -101,7 +107,7 @@ const styles = StyleSheet.create({
   trainerRow: { paddingHorizontal: 2, paddingVertical: 16 },
   trainerDivider: { height: StyleSheet.hairlineWidth, backgroundColor: theme.colors.divider, marginLeft: 67 },
   trainerTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar: { width: 53, height: 53, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: '#383A34' },
+  avatar: { width: 53, height: 53, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surfaceElevated },
   avatarImage: { width: '100%', height: '100%', borderRadius: 27 },
   avatarText: { color: theme.colors.text, fontSize: 15, fontWeight: '700' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

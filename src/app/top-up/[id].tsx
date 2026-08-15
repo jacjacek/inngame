@@ -6,7 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, LoadingScreen, ModalHeader, Pill, SectionTitle, selectionHaptic, successHaptic, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 const offers = [
   { hours: 5, discount: 0 },
@@ -15,6 +19,7 @@ const offers = [
 ];
 
 function TopUpScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
@@ -43,7 +48,7 @@ function TopUpScreen() {
       <View style={styles.page}>
         <ModalHeader title="Gotowe" />
         <View style={styles.success}>
-          <View style={styles.successIcon}><Ionicons name="checkmark" size={38} color="#11120F" /></View>
+          <View style={styles.successIcon}><Ionicons name="checkmark" size={38} color={theme.colors.onAccent} /></View>
           <Text style={styles.successTitle}>Pakiet dokupiony</Text>
           <Text style={styles.successText}>+{offer.hours} godz. jest już dostępne w Twoim saldzie.</Text>
           <View style={styles.confirmation}>
@@ -133,17 +138,18 @@ function TopUpScreen() {
 }
 
 function ConfirmationRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  const { styles, theme } = useStyles();
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={[styles.rowValue, accent && { color: theme.colors.lime }]}>{value}</Text>
+      <Text style={[styles.rowValue, accent && { color: theme.colors.accentText }]}>{value}</Text>
     </View>
   );
 }
 
 export default withSheetPage(TopUpScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30 },
@@ -165,10 +171,10 @@ const styles = StyleSheet.create({
   offerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   offerTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
   discount: { backgroundColor: theme.colors.lime, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3 },
-  discountText: { color: '#11120F', fontSize: 9, fontWeight: '700' },
+  discountText: { color: theme.colors.onAccent, fontSize: 9, fontWeight: '700' },
   offerMeta: { color: theme.colors.secondaryText, fontSize: 11.5, marginTop: 5 },
   offerPrice: { color: theme.colors.text, fontSize: 15, fontWeight: '600' },
-  offerPriceSelected: { color: theme.colors.lime },
+  offerPriceSelected: { color: theme.colors.accentText },
   payments: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   summary: { paddingHorizontal: 2, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider },
   summaryTitle: { color: theme.colors.text, fontSize: 17, fontWeight: '600', paddingBottom: 9 },
@@ -177,7 +183,7 @@ const styles = StyleSheet.create({
   rowValue: { color: theme.colors.text, fontSize: 13, fontWeight: '600', maxWidth: '65%', textAlign: 'right' },
   totalRow: { marginTop: 8, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   totalLabel: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
-  total: { color: theme.colors.lime, fontSize: 24, fontWeight: '600' },
+  total: { color: theme.colors.accentText, fontSize: 24, fontWeight: '600' },
   security: { flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center' },
   securityText: { color: theme.colors.secondaryText, fontSize: 11.5 },
   info: { color: theme.colors.secondaryText, fontSize: 12, lineHeight: 18, textAlign: 'center', paddingHorizontal: 15 },

@@ -1,9 +1,10 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { useAppTheme } from '@/theme';
 
 export default function TabsLayout() {
+  const theme = useAppTheme();
   const store = useAppStore();
   const unreadMessages = Object.values(store.conversationUnread).reduce((total, unread) => total + unread, 0);
   const unreadOffers = store.availabilityOffers.filter((offer) => offer.status === 'available' && !offer.readAt).length;
@@ -12,7 +13,7 @@ export default function TabsLayout() {
     <NativeTabs
       backBehavior="history"
       backgroundColor={theme.colors.surfaceSoft}
-      blurEffect="systemChromeMaterialDark"
+      blurEffect={theme.mode === 'dark' ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
       disableTransparentOnScrollEdge
       iconColor={{ default: theme.colors.secondaryText, selected: theme.colors.text }}
       indicatorColor="rgba(199,225,46,0.18)"

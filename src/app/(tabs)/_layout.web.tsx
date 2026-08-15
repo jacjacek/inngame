@@ -21,7 +21,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_TAB_BAR_HEIGHT = 64;
@@ -89,6 +93,7 @@ const WebTabButton = forwardRef<View, WebTabButtonProps>(function WebTabButton(
   },
   ref,
 ) {
+  const { styles, theme } = useStyles();
   const focus = useSharedValue(isFocused ? 1 : 0);
   const reduceMotion = useReducedMotion();
 
@@ -113,9 +118,9 @@ const WebTabButton = forwardRef<View, WebTabButtonProps>(function WebTabButton(
     color: interpolateColor(
       focus.value,
       [0, 1],
-      [theme.colors.secondaryText, theme.colors.lime],
+      [theme.colors.secondaryText, theme.colors.accentText],
     ),
-  }));
+  }), [theme]);
   const highlightStyle = useAnimatedStyle(() => ({
     opacity: focus.value,
     transform: [{ scaleX: reduceMotion ? 1 : interpolate(focus.value, [0, 1], [0.55, 1]) }],
@@ -138,7 +143,7 @@ const WebTabButton = forwardRef<View, WebTabButtonProps>(function WebTabButton(
           <Ionicons name={icon} size={22} color={theme.colors.secondaryText} />
         </Animated.View>
         <Animated.View style={[styles.iconLayer, activeIconStyle]}>
-          <Ionicons name={activeIcon} size={22} color={theme.colors.lime} />
+          <Ionicons name={activeIcon} size={22} color={theme.colors.accentText} />
         </Animated.View>
         {badge ? (
           <View style={styles.badge}>
@@ -155,6 +160,7 @@ const WebTabButton = forwardRef<View, WebTabButtonProps>(function WebTabButton(
 });
 
 export default function WebTabsLayout() {
+  const { styles } = useStyles();
   const store = useAppStore();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -213,7 +219,7 @@ export default function WebTabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   tabs: {
     flex: 1,
     minHeight: 0,
@@ -243,7 +249,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: theme.colors.divider,
-    backgroundColor: 'rgba(24,25,22,0.94)',
+    backgroundColor: theme.colors.surfaceGlass,
   },
   desktopTabList: {
     height: 70,
@@ -268,7 +274,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   selectedDesktopTab: {
-    backgroundColor: 'rgba(199,225,46,0.08)',
+    backgroundColor: theme.colors.accentSoft,
   },
   selectedMobileTab: { backgroundColor: 'transparent' },
   pressedTab: {
@@ -292,7 +298,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(199,225,46,0.1)',
+    backgroundColor: theme.colors.accentSoft,
   },
   label: {
     fontSize: 11,

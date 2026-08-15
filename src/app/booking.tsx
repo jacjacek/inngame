@@ -7,7 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { clubs, trainers } from '@/data/models';
 import { AppButton, Divider, formatTime, InfoRow, LoadingScreen, ModalHeader, Pill, SectionTitle, selectionHaptic, successHaptic, ToggleRow, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 const durations = [60, 90, 120];
 const slots = Array.from({ length: 14 }, (_, index) => 7 + index);
@@ -17,6 +21,7 @@ function sameDay(a: Date, b: Date) {
 }
 
 function HydratedBookingScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; offerId?: string; suggestedDate?: string }>();
   const store = useAppStore();
@@ -133,7 +138,7 @@ function HydratedBookingScreen() {
 
         {offer ? (
           <View style={styles.offerNotice}>
-            <View style={styles.offerNoticeIcon}><Ionicons name="flash" size={18} color={theme.colors.lime} /></View>
+            <View style={styles.offerNoticeIcon}><Ionicons name="flash" size={18} color={theme.colors.accentText} /></View>
             <View style={styles.flex}>
               <Text style={styles.offerNoticeTitle}>Wolny termin od {trainer.name}</Text>
               <Text style={styles.offerNoticeText}>Termin i miejsce są przypisane do tej oferty.</Text>
@@ -290,6 +295,7 @@ function BookingScreen() {
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
+  const { styles } = useStyles();
   return (
     <View style={styles.summaryRow}>
       <Text style={styles.summaryLabel}>{label}</Text>
@@ -300,17 +306,17 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 export default withSheetPage(BookingScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   content: { padding: 16, paddingBottom: 28, gap: 24 },
   title: { color: theme.colors.text, fontSize: 29, fontWeight: '700', letterSpacing: -0.6 },
   subtitle: { color: theme.colors.secondaryText, fontSize: 14, lineHeight: 20, marginTop: 7 },
-  offerNotice: { minHeight: 70, padding: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(199,225,46,0.08)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(199,225,46,0.22)' },
-  offerNoticeIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(199,225,46,0.1)' },
+  offerNotice: { minHeight: 70, padding: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: theme.colors.accentSoft, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.accentBorder },
+  offerNoticeIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.accentSoft },
   offerNoticeTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '600' },
   offerNoticeText: { color: theme.colors.secondaryText, fontSize: 11.5, marginTop: 4 },
-  warningCard: { minHeight: 74, padding: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(255,109,77,0.08)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,109,77,0.24)' },
+  warningCard: { minHeight: 74, padding: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: theme.colors.dangerSoft, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.dangerBorder },
   warningCardTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '600' },
   warningCardText: { color: theme.colors.secondaryText, fontSize: 11.5, lineHeight: 16, marginTop: 4 },
   section: { gap: 9 },
@@ -321,7 +327,7 @@ const styles = StyleSheet.create({
   dayWeek: { color: theme.colors.secondaryText, fontSize: 10, textTransform: 'capitalize' },
   dayNumber: { color: theme.colors.text, fontSize: 20, fontWeight: '600', marginTop: 3 },
   dayMonth: { color: theme.colors.tertiaryText, fontSize: 9, marginTop: 3 },
-  darkText: { color: '#11120F' },
+  darkText: { color: theme.colors.onAccent },
   darkMuted: { color: 'rgba(17,18,15,0.56)' },
   hint: { color: theme.colors.tertiaryText, fontSize: 10 },
   slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -342,7 +348,7 @@ const styles = StyleSheet.create({
   summary: { paddingHorizontal: 2, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider },
   summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   summaryTitle: { color: theme.colors.text, fontSize: 17, fontWeight: '600' },
-  total: { color: theme.colors.lime, fontSize: 21, fontWeight: '600' },
+  total: { color: theme.colors.accentText, fontSize: 21, fontWeight: '600' },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 11 },
   summaryLabel: { color: theme.colors.secondaryText, fontSize: 13 },
   summaryValue: { color: theme.colors.text, fontSize: 13, fontWeight: '600', maxWidth: '68%', textAlign: 'right' },

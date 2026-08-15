@@ -27,8 +27,10 @@ import {
   trainers,
   Training,
 } from '@/data/models';
+import { ThemeMode } from '@/theme';
 
 type PersistedState = {
+  themeMode: ThemeMode;
   profile: Profile;
   profileCompleted: boolean;
   selectedTrainerId?: string;
@@ -50,6 +52,7 @@ type AppStore = PersistedState & {
   hydrated: boolean;
   now: number;
   completedSteps: number;
+  setThemeMode: (mode: ThemeMode) => void;
   saveProfile: (profile: Profile) => void;
   selectTrainer: (id: string) => void;
   addTraining: (training: Training) => void;
@@ -77,6 +80,7 @@ type AppStore = PersistedState & {
 const STORAGE_KEY = 'mymovio.expo.state.v1';
 
 const initialState: PersistedState = {
+  themeMode: 'light',
   profile: { name: '', city: '', playingLevel: '' },
   profileCompleted: false,
   selectedTrainerId: undefined,
@@ -171,6 +175,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     hydrated,
     now,
     completedSteps: Number(state.profileCompleted) + Number(Boolean(state.selectedTrainerId)) + Number(state.hasAnyTraining),
+    setThemeMode: (themeMode) => patchState({ themeMode }),
     saveProfile: (profile) => patchState({ profile, profileCompleted: true }),
     selectTrainer: (id) => patchState({ selectedTrainerId: id }),
     addTraining: (training) => setState((current) => ({

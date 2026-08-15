@@ -26,7 +26,11 @@ import {
   withSheetPage,
 } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 const leadTimes: { value: AvailabilityLeadTime; label: string }[] = [
   { value: 'today', label: 'Dzisiaj' },
@@ -35,6 +39,7 @@ const leadTimes: { value: AvailabilityLeadTime; label: string }[] = [
 ];
 
 function HydratedAvailabilityPreferencesScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { returnConversationId, trainerId } = useLocalSearchParams<{ returnConversationId?: string; trainerId?: string }>();
   const store = useAppStore();
@@ -47,7 +52,7 @@ function HydratedAvailabilityPreferencesScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.intro}>
             <View style={styles.introIcon}>
-              <Ionicons name="notifications-outline" size={22} color={theme.colors.lime} />
+              <Ionicons name="notifications-outline" size={22} color={theme.colors.accentText} />
             </View>
             <View style={styles.flex}>
               <Text style={styles.introTitle}>Mniej przypadkowych alertów</Text>
@@ -162,7 +167,7 @@ function HydratedAvailabilityPreferencesScreen() {
                         store.toggleAvailabilityDayPart(trainer.id, day.key, part.key);
                       }}
                       style={[styles.matrixCell, active && styles.matrixCellActive]}>
-                      {active ? <Ionicons name="checkmark" size={17} color="#11120F" /> : null}
+                      {active ? <Ionicons name="checkmark" size={17} color={theme.colors.onAccent} /> : null}
                     </Pressable>
                   );
                 })}
@@ -194,7 +199,7 @@ function HydratedAvailabilityPreferencesScreen() {
                         accessibilityRole="button"
                         onPress={() => store.addAvailabilityTimeRange(trainer.id, day.key)}
                         style={({ pressed }) => [styles.addRange, pressed && styles.pressed]}>
-                        <Ionicons name="add" size={15} color={theme.colors.lime} />
+                        <Ionicons name="add" size={15} color={theme.colors.accentText} />
                         <Text style={styles.addRangeText}>Dodaj zakres</Text>
                       </Pressable>
                     </View>
@@ -289,12 +294,12 @@ function AvailabilityPreferencesScreen() {
 
 export default withSheetPage(AvailabilityPreferencesScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   content: { padding: 16, paddingBottom: 28, gap: 22 },
   intro: { flexDirection: 'row', gap: 13, alignItems: 'flex-start', padding: 16, borderRadius: 18, backgroundColor: theme.colors.surfaceSoft },
-  introIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(199,225,46,0.1)' },
+  introIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.accentSoft },
   introTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
   introText: { color: theme.colors.secondaryText, fontSize: 12.5, lineHeight: 18, marginTop: 5 },
   section: { borderRadius: 16, backgroundColor: theme.colors.surfaceSoft, overflow: 'hidden' },
@@ -305,16 +310,16 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
   trainerRow: { minHeight: 72, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 11 },
   trainerInitials: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surfaceElevated },
-  trainerInitialsActive: { backgroundColor: 'rgba(199,225,46,0.14)' },
+  trainerInitialsActive: { backgroundColor: theme.colors.accentSoft },
   trainerInitialsText: { color: theme.colors.secondaryText, fontSize: 12, fontWeight: '700' },
-  trainerInitialsTextActive: { color: theme.colors.lime },
+  trainerInitialsTextActive: { color: theme.colors.accentText },
   trainerName: { color: theme.colors.text, fontSize: 14.5, fontWeight: '600' },
   trainerSummary: { color: theme.colors.secondaryText, fontSize: 11, marginTop: 4 },
   statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: theme.colors.tertiaryText },
   statusDotActive: { backgroundColor: theme.colors.success },
   trainerHeader: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 2 },
-  trainerInitialsLarge: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(199,225,46,0.13)' },
-  trainerInitialsLargeText: { color: theme.colors.lime, fontSize: 15, fontWeight: '700' },
+  trainerInitialsLarge: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.accentSoft },
+  trainerInitialsLargeText: { color: theme.colors.accentText, fontSize: 15, fontWeight: '700' },
   trainerNameLarge: { color: theme.colors.text, fontSize: 20, fontWeight: '600' },
   trainerMeta: { color: theme.colors.secondaryText, fontSize: 11.5, marginTop: 4 },
   preferenceBody: { gap: 18 },
@@ -333,7 +338,7 @@ const styles = StyleSheet.create({
   preciseDayHeader: { minHeight: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   preciseDayTitle: { color: theme.colors.text, fontSize: 12.5, fontWeight: '600' },
   addRange: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, paddingHorizontal: 7 },
-  addRangeText: { color: theme.colors.lime, fontSize: 10.5, fontWeight: '600' },
+  addRangeText: { color: theme.colors.accentText, fontSize: 10.5, fontWeight: '600' },
   rangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   timeInput: { width: 76, height: 42, borderRadius: 11, backgroundColor: theme.colors.surfaceElevated, color: theme.colors.text, textAlign: 'center', fontSize: 13.5, fontWeight: '600' },
   timeInputError: { borderWidth: 1, borderColor: theme.colors.coral },

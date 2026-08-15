@@ -8,9 +8,14 @@ import { trainers } from '@/data/models';
 import { trainerPhotos } from '@/data/trainer-media';
 import { AppButton, Divider, IconButton, InfoRow, LoadingScreen, ModalHeader, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 function TrainerProfileScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   const { id, purpose } = useLocalSearchParams<{ id: string; purpose?: string }>();
   const store = useAppStore();
@@ -42,7 +47,7 @@ function TrainerProfileScreen() {
           <View style={styles.verified}><Ionicons name="checkmark-circle" size={17} color={theme.colors.sky} /><Text style={styles.verifiedText}>Profil zweryfikowany</Text></View>
           <Text style={styles.name}>{trainer.name}</Text>
           <Text style={styles.specialty}>{trainer.specialty}</Text>
-          <View style={styles.rating}><Ionicons name="star" size={16} color={theme.colors.lime} /><Text style={styles.ratingText}>{trainer.rating}</Text><Text style={styles.ratingMuted}>{trainer.reviewCount} opinii · {trainer.distance} · {trainer.price} zł/h</Text></View>
+          <View style={styles.rating}><Ionicons name="star" size={16} color={theme.colors.accentText} /><Text style={styles.ratingText}>{trainer.rating}</Text><Text style={styles.ratingMuted}>{trainer.reviewCount} opinii · {trainer.distance} · {trainer.price} zł/h</Text></View>
           {selected ? <View style={styles.selected}><Ionicons name="checkmark-circle" size={16} color={theme.colors.success} /><Text style={styles.selectedText}>Twój aktywny trener</Text></View> : null}
         </View>
 
@@ -64,7 +69,7 @@ function TrainerProfileScreen() {
 
         <View style={styles.alertPreference}>
           <View style={styles.alertIcon}>
-            <Ionicons name="flash-outline" size={19} color={availabilityPreference.enabled ? theme.colors.lime : theme.colors.secondaryText} />
+            <Ionicons name="flash-outline" size={19} color={availabilityPreference.enabled ? theme.colors.accentText : theme.colors.secondaryText} />
           </View>
           <View style={styles.flex}>
             <Text style={styles.availabilityLabel}>Powiadomienia o wolnych terminach</Text>
@@ -107,18 +112,19 @@ function TrainerProfileScreen() {
 }
 
 function Metric({ value, label }: { value: string; label: string }) {
+  const { styles } = useStyles();
   return <View style={styles.metric}><Text style={styles.metricValue}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></View>;
 }
 
 export default withSheetPage(TrainerProfileScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
 
   content: { padding: 16, gap: 20, paddingBottom: 42 },
   hero: { alignItems: 'center', paddingVertical: 10 },
-  avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: '#343630', alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: theme.colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   avatarImage: { width: '100%', height: '100%', borderRadius: 46 },
   avatarText: { color: theme.colors.text, fontSize: 27, fontWeight: '700' },
   verified: { flexDirection: 'row', gap: 5, alignItems: 'center', marginTop: 14 },
@@ -128,7 +134,7 @@ const styles = StyleSheet.create({
   rating: { flexDirection: 'row', gap: 5, alignItems: 'center', marginTop: 12 },
   ratingText: { color: theme.colors.text, fontSize: 13, fontWeight: '600' },
   ratingMuted: { color: theme.colors.secondaryText, fontSize: 12 },
-  selected: { flexDirection: 'row', gap: 6, marginTop: 13, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 999, backgroundColor: 'rgba(152,215,91,0.12)' },
+  selected: { flexDirection: 'row', gap: 6, marginTop: 13, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 999, backgroundColor: theme.colors.successSoft },
   selectedText: { color: theme.colors.success, fontSize: 11, fontWeight: '600' },
   metrics: { flexDirection: 'row', paddingVertical: 14, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
   metric: { flex: 1, minHeight: 83, alignItems: 'center', justifyContent: 'center' },
@@ -137,7 +143,7 @@ const styles = StyleSheet.create({
   metricLabel: { color: theme.colors.secondaryText, fontSize: 10.5, marginTop: 5 },
   availability: { paddingHorizontal: 2, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   alertPreference: { paddingHorizontal: 2, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
-  alertIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(199,225,46,0.08)' },
+  alertIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.accentSoft },
   calendarIcon: { width: 36, alignItems: 'center', justifyContent: 'center' },
   availabilityLabel: { color: theme.colors.secondaryText, fontSize: 10, fontWeight: '500' },
   availabilityValue: { color: theme.colors.text, fontSize: 14, fontWeight: '600', marginTop: 4 },

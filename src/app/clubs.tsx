@@ -5,9 +5,14 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { clubs } from '@/data/models';
 import { AppButton, ModalHeader, withSheetPage } from '@/components/ui';
-import { theme } from '@/theme';
+import { AppTheme, useThemeStyles } from '@/theme';
+
+function useStyles() {
+  return useThemeStyles(createStyles);
+}
 
 function ClubsScreen() {
+  const { styles, theme } = useStyles();
   const router = useRouter();
   return (
     <View style={styles.page}>
@@ -46,12 +51,13 @@ function ClubsScreen() {
 }
 
 function Fact({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string }) {
+  const { styles, theme } = useStyles();
   return <View style={styles.fact}><Ionicons name={icon} size={14} color={theme.colors.secondaryText} /><Text style={styles.factText}>{text}</Text></View>;
 }
 
 export default withSheetPage(ClubsScreen);
 
-const styles = StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 16, gap: 14, paddingBottom: 40 },
   flex: { flex: 1 },
