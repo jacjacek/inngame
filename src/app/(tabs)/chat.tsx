@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AvailabilityOffer, doesOfferMatchPreference, offerTimeLabel, preferenceSummary } from '@/data/availability';
 import { conversations, trainers } from '@/data/models';
 import { conversationPhotos } from '@/data/trainer-media';
+import { layout } from '@/responsive';
 import { useAppStore } from '@/state/app-store';
 import { AppTheme, useThemeStyles } from '@/theme';
 import { AppButton, endTime, formatDate, formatTime, IconButton, LoadingScreen, selectionHaptic } from '@/components/ui';
@@ -484,7 +485,7 @@ function Avatar({ initials, source, compact, tiny }: { initials: string; source?
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-  page: { flex: 1, backgroundColor: theme.colors.background },
+  page: { flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   pressed: { opacity: 0.72 },
   listHeader: { paddingHorizontal: 18, paddingTop: 9, paddingBottom: 14 },
@@ -514,7 +515,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   chatPerson: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   chatName: { color: theme.colors.text, fontSize: 15, fontWeight: '600' },
   online: { color: theme.colors.success, fontSize: 10.5, marginTop: 2 },
-  messages: { paddingHorizontal: 14, paddingVertical: 10 },
+  messages: { width: '100%', maxWidth: layout.readableMaxWidth, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 10 },
   dateDivider: { alignSelf: 'center', color: theme.colors.tertiaryText, fontSize: 10, fontWeight: '500', marginVertical: 10 },
   trainingArtifact: { minHeight: 70, paddingVertical: 11, paddingHorizontal: 2, marginBottom: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
   artifactIcon: { width: 30, alignItems: 'center', justifyContent: 'center' },

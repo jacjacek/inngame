@@ -2,8 +2,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView as NativeTabsSafeAreaView } from 'react-native-screens/experimental';
 
 import { Training } from '@/data/models';
+import { useResponsiveLayout } from '@/responsive';
 import { useAppStore } from '@/state/app-store';
 import { AppTheme, useThemeStyles } from '@/theme';
 import {
@@ -85,6 +87,7 @@ function monthCells(focusDate: Date) {
 export default function ScheduleScreen() {
   const { styles } = useStyles();
   const router = useRouter();
+  const responsive = useResponsiveLayout();
   const { trainings, hydrated } = useAppStore();
   const [mode, setMode] = useState<Mode>('list');
   const [focusDate, setFocusDate] = useState(() => startOfDay(new Date()));
@@ -106,7 +109,8 @@ export default function ScheduleScreen() {
   };
 
   return (
-    <Screen scroll={false} contentStyle={styles.screenContent}>
+    <NativeTabsSafeAreaView edges={{ bottom: true }} style={styles.flex}>
+    <Screen scroll={false} maxWidth="wide" contentStyle={styles.screenContent}>
       <View style={styles.topChrome}>
         <Header
           title="Kalendarz"
@@ -117,6 +121,7 @@ export default function ScheduleScreen() {
           focusDate={focusDate}
           setMode={setMode}
           setFocusDate={selectDate}
+          expanded={!responsive.isPhone}
         />
       </View>
       {mode === 'list' ? (
@@ -139,15 +144,18 @@ export default function ScheduleScreen() {
         />
       ) : null}
     </Screen>
+    </NativeTabsSafeAreaView>
   );
 }
 
 function CalendarModeBar({
+  expanded,
   mode,
   focusDate,
   setMode,
   setFocusDate,
 }: {
+  expanded: boolean;
   mode: Mode;
   focusDate: Date;
   setMode: (mode: Mode) => void;
@@ -173,8 +181,8 @@ function CalendarModeBar({
   };
 
   return (
-    <View style={styles.calendarModeBar}>
-      <View style={styles.compactModePicker}>
+    <View style={[styles.calendarModeBar, expanded && styles.calendarModeBarExpanded]}>
+      <View style={[styles.compactModePicker, expanded && styles.compactModePickerExpanded]}>
         {modes.map((item) => (
           <Pressable
             key={item.value}
@@ -192,8 +200,8 @@ function CalendarModeBar({
           </Pressable>
         ))}
       </View>
-      {mode === 'list' ? <View style={styles.periodSpacer} /> : (
-        <View style={styles.periodSwitcher}>
+      {mode === 'list' ? (expanded ? null : <View style={styles.periodSpacer} />) : (
+        <View style={[styles.periodSwitcher, expanded && styles.periodSwitcherExpanded]}>
           <Pressable
             accessibilityLabel={mode === 'week' ? 'Poprzedni tydzień' : 'Poprzedni miesiąc'}
             accessibilityRole="button"
@@ -623,19 +631,22 @@ function EmptyState() {
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
   flex: { flex: 1 },
-  screenContent: { flex: 1, paddingHorizontal: 16, paddingTop: 8, gap: 10 },
+  screenContent: { flex: 1, paddingTop: 8, gap: 10 },
   topChrome: { flexShrink: 0, gap: 8 },
-  modeScrollContent: { gap: 12, paddingBottom: 100 },
-  monthScrollContent: { gap: 8, paddingBottom: 100 },
+  modeScrollContent: { width: '100%', alignSelf: 'center', maxWidth: 760, gap: 12, paddingBottom: Platform.OS === 'web' ? 48 : 32 },
+  monthScrollContent: { width: '100%', alignSelf: 'center', gap: 8, paddingBottom: Platform.OS === 'web' ? 48 : 32 },
   contextTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
   calendarModeBar: { height: 38, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  calendarModeBarExpanded: { justifyContent: 'flex-start' },
   compactModePicker: { flex: 1.18, height: 38, padding: 2, flexDirection: 'row', borderRadius: 11, backgroundColor: theme.colors.surfaceElevated },
+  compactModePickerExpanded: { flex: 0, width: 320 },
   compactModeButton: { flex: 1, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   compactModeButtonSelected: { backgroundColor: theme.colors.surface },
   compactModeText: { color: theme.colors.secondaryText, fontSize: 10.5, fontWeight: '600' },
   compactModeTextSelected: { color: theme.colors.text },
   periodSpacer: { flex: 0.82 },
   periodSwitcher: { flex: 0.82, height: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 11, backgroundColor: theme.colors.surfaceElevated },
+  periodSwitcherExpanded: { flex: 0, width: 220 },
   periodArrow: { width: 28, height: 38, alignItems: 'center', justifyContent: 'center' },
   periodTitleButton: { flex: 1, height: 38, alignItems: 'center', justifyContent: 'center' },
   periodTitle: { color: theme.colors.text, fontSize: 10.5, fontWeight: '600', textTransform: 'capitalize' },
@@ -670,8 +681,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   trainingTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '600', flexShrink: 1 },
   trainingMeta: { color: theme.colors.secondaryText, fontSize: 12, marginTop: 4 },
   coachBadge: { color: theme.colors.sky, fontSize: 9, fontWeight: '600' },
-  weekMode: { flex: 1 },
-  weekFrame: { flex: 1, minHeight: 300, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, overflow: 'hidden', backgroundColor: theme.colors.background },
+  weekMode: { flex: 1, minHeight: 0 },
+  weekFrame: { flex: 1, minHeight: 0, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, overflow: 'hidden', backgroundColor: theme.colors.background },
   weekHorizontal: { flex: 1, width: '100%' },
   weekHorizontalContent: { width: WEEK_CANVAS_WIDTH },
   weekCanvas: { width: WEEK_CANVAS_WIDTH, flex: 1 },

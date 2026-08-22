@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { PurchasedPackage, Training } from '@/data/models';
+import { layout, useResponsiveLayout } from '@/responsive';
 import { useAppStore } from '@/state/app-store';
 import { AppTheme, useThemeStyles } from '@/theme';
 import {
@@ -92,10 +92,14 @@ export default function HomeScreen() {
 function FreshDashboard() {
   const { styles, theme } = useStyles();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const responsive = useResponsiveLayout();
   const { profileCompleted, selectedTrainerId, completedSteps } = useAppStore();
   const progress = completedSteps / 3;
-  const heroHeight = width < 768 ? Math.min(Math.max(width * 0.86, 320), 352) : 360;
+  const heroHeight = responsive.isDesktop
+    ? Math.min(Math.max(responsive.height - 72, 560), 720)
+    : responsive.isPhone
+      ? Math.min(Math.max(responsive.width * 0.86, 320), 368)
+      : 410;
   const heroMotion = useHeroParallax();
 
   const steps = [
@@ -130,7 +134,8 @@ function FreshDashboard() {
       onScroll={heroMotion.onScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}>
-      <View style={[styles.freshHero, { height: heroHeight }]}>
+      <View style={[styles.freshShell, responsive.isDesktop && styles.freshShellDesktop]}>
+      <View style={[styles.freshHero, responsive.isDesktop && styles.freshHeroDesktop, { height: heroHeight }]}>
         <Animated.Image source={courtImage} resizeMode="cover" style={[styles.freshHeroImage, heroMotion.imageStyle]} />
         <LinearGradient
           colors={['rgba(17,18,15,0.08)', 'rgba(17,18,15,0.22)', 'rgba(17,18,15,0.96)']}
@@ -142,12 +147,12 @@ function FreshDashboard() {
             <Ionicons name="tennisball" size={15} color={theme.colors.lime} />
             <Text style={styles.welcomeText}>Witaj w MyMovio</Text>
           </View>
-          <Text style={styles.freshTitle}>Twój pierwszy trening{'\n'}zaczyna się tutaj</Text>
+          <Text style={[styles.freshTitle, responsive.isDesktop && styles.freshTitleDesktop]}>Twój pierwszy trening{responsive.isPhone ? '\n' : ' '}zaczyna się tutaj</Text>
           <Text style={styles.freshSubtitle}>Przejdź 3 krótkie kroki, a dopasujemy trenera i termin do Ciebie.</Text>
         </AnimatedSafeAreaView>
       </View>
 
-      <View style={styles.freshCards}>
+      <View style={[styles.freshCards, { paddingHorizontal: responsive.gutter }, responsive.isDesktop && styles.freshCardsDesktop]}>
         <View style={styles.checklist}>
           <View style={styles.checklistHeader}>
             <View>
@@ -197,6 +202,7 @@ function FreshDashboard() {
           </View>
         </View>
       </View>
+      </View>
     </Animated.ScrollView>
   );
 }
@@ -204,7 +210,7 @@ function FreshDashboard() {
 function TrainingDashboard() {
   const { styles, theme } = useStyles();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const responsive = useResponsiveLayout();
   const { trainings, packages, selectedSport, trainingNote } = useAppStore();
   const [selectedDay, setSelectedDay] = useState(0);
   const [referenceTime] = useState(() => new Date().getTime());
@@ -214,7 +220,7 @@ function TrainingDashboard() {
     [referenceTime, trainings],
   );
   const next = futureTrainings[0] ?? trainings[0];
-  const heroHeight = width < 768 ? Math.min(Math.max(width * 0.86, 320), 352) : 360;
+  const heroHeight = responsive.isPhone ? Math.min(Math.max(responsive.width * 0.86, 320), 368) : responsive.isDesktop ? 430 : 390;
   const heroMotion = useHeroParallax();
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
@@ -237,7 +243,7 @@ function TrainingDashboard() {
       onScroll={heroMotion.onScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}>
-      <MotionPressable onPress={() => openTraining(next)} pressedScale={0.995} style={[styles.hero, { height: heroHeight }]}>
+      <MotionPressable onPress={() => openTraining(next)} pressedScale={0.995} style={[styles.hero, responsive.isDesktop && styles.heroDesktop, { height: heroHeight }]}>
         <Animated.Image source={courtImage} resizeMode="cover" style={[styles.heroImage, heroMotion.imageStyle]} />
           <LinearGradient
             colors={['rgba(17,18,15,0.12)', 'rgba(17,18,15,0.3)', 'rgba(17,18,15,0.97)']}
@@ -256,7 +262,7 @@ function TrainingDashboard() {
           </AnimatedSafeAreaView>
       </MotionPressable>
 
-      <View style={styles.dashboardBody}>
+      <View style={[styles.dashboardBody, { paddingHorizontal: responsive.gutter }, responsive.isDesktop && styles.dashboardBodyDesktop]}>
         <View style={styles.factStrip}>
           <HeroFact icon="grid-outline" label="Kort" value={next.court} />
           <View style={styles.verticalDivider} />
@@ -265,7 +271,7 @@ function TrainingDashboard() {
           <HeroFact icon="partly-sunny" label="Warunki" value="22° · Dobre" />
         </View>
 
-        <View style={styles.quickGrid}>
+        <View style={[styles.quickGrid, !responsive.isPhone && styles.quickGridExpanded]}>
           <QuickAction icon="tennisball" title="Umów grę" subtitle="Partner, trener i kort" onPress={() => router.push('/booking')} />
           <QuickAction icon="list-outline" title="Szczegóły treningu" subtitle="Plan, miejsce i uczestnicy" onPress={() => openTraining(next)} />
         </View>
@@ -325,7 +331,7 @@ function TrainingDashboard() {
         </View>
 
         <SectionTitle title="Aktywne pakiety" action={<Text style={styles.sectionMeta}>{packages.length} aktywne</Text>} />
-        <View style={styles.packageGrid}>
+        <View style={[styles.packageGrid, responsive.isCompact && styles.packageGridCompact]}>
           {packages.map((item) => (
             <PackageColumn
               key={item.id}
@@ -484,15 +490,20 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   flex: { flex: 1 },
   pressed: { opacity: 0.72 },
   locked: { opacity: 0.38 },
-  freshContent: { paddingBottom: 40 },
+  freshContent: { width: '100%', alignItems: 'center', paddingBottom: 40 },
+  freshShell: { width: '100%', maxWidth: layout.wideMaxWidth },
+  freshShellDesktop: { flexDirection: 'row', alignItems: 'center', gap: 28, padding: 32 },
   freshHero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', justifyContent: 'flex-end', backgroundColor: theme.colors.background },
+  freshHeroDesktop: { flex: 1.25, minWidth: 0, borderRadius: theme.radius.large },
   freshHeroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.78 },
   freshHeroContent: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: 22, paddingBottom: 24 },
   welcomePill: { alignSelf: 'flex-start', flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.42)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 14 },
   welcomeText: { color: theme.colors.lime, fontSize: 11.5, fontWeight: '600' },
   freshTitle: { color: theme.colors.heroText, fontSize: 34, fontWeight: '700', letterSpacing: -1.1, lineHeight: 38 },
+  freshTitleDesktop: { fontSize: 42, lineHeight: 46, maxWidth: 560 },
   freshSubtitle: { color: theme.colors.heroSecondary, fontSize: 14.5, lineHeight: 20, marginTop: 9, maxWidth: 320 },
-  freshCards: { paddingHorizontal: 16, gap: 14 },
+  freshCards: { gap: 14 },
+  freshCardsDesktop: { flex: 0.75, minWidth: 340, paddingHorizontal: 0, justifyContent: 'center' },
   checklist: { paddingHorizontal: 2, paddingVertical: 8 },
   checklistHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardEyebrow: { color: theme.colors.secondaryText, fontSize: 10.5, fontWeight: '500' },
@@ -511,8 +522,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   reassurance: { paddingHorizontal: 2, paddingVertical: 16, flexDirection: 'row', gap: 14, alignItems: 'flex-start', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider },
   reassuranceTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '600' },
   reassuranceText: { color: theme.colors.secondaryText, fontSize: 13, lineHeight: 18, marginTop: 4 },
-  dashboardContent: { paddingBottom: 30 },
-  hero: { height: 390, width: '100%', position: 'relative', overflow: 'hidden', backgroundColor: theme.colors.background },
+  dashboardContent: { width: '100%', alignItems: 'center', paddingBottom: 30 },
+  hero: { height: 390, width: '100%', maxWidth: layout.wideMaxWidth, position: 'relative', overflow: 'hidden', backgroundColor: theme.colors.background },
+  heroDesktop: { marginTop: 32, borderRadius: theme.radius.large },
   heroImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.74 },
   heroContent: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 23, paddingHorizontal: 20 },
   heroEyebrow: { color: theme.colors.heroSecondary, fontSize: 10.5, fontWeight: '500' },
@@ -521,7 +533,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   heroMeta: { color: theme.colors.heroSecondary, fontSize: 13, marginTop: 6 },
   durationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   durationText: { color: theme.colors.heroSecondary, fontSize: 12 },
-  dashboardBody: { paddingHorizontal: 16, marginTop: -8, gap: 12 },
+  dashboardBody: { width: '100%', maxWidth: layout.contentMaxWidth, marginTop: -8, gap: 12 },
+  dashboardBodyDesktop: { marginTop: 24, paddingBottom: 24 },
   factStrip: { minHeight: 66, flexDirection: 'row', paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.divider },
   heroFact: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5 },
   factLabelRow: { flexDirection: 'row', gap: 5, alignItems: 'center' },
@@ -529,6 +542,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   factValue: { color: theme.colors.text, fontSize: 14, fontWeight: '600' },
   verticalDivider: { width: StyleSheet.hairlineWidth, backgroundColor: theme.colors.border },
   quickGrid: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.divider },
+  quickGridExpanded: { flexDirection: 'row', gap: 16 },
   quickAction: { minHeight: 66, paddingHorizontal: 2, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider, overflow: 'hidden' },
   quickTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '600' },
   quickSubtitle: { color: theme.colors.secondaryText, fontSize: 11.5, marginTop: 4 },
@@ -559,7 +573,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   emptyText: { color: theme.colors.secondaryText, fontSize: 12.5 },
   sectionMeta: { color: theme.colors.secondaryText, fontSize: 12 },
   packageGrid: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  packageColumn: { flex: 1, gap: 8 },
+  packageGridCompact: { flexDirection: 'column' },
+  packageColumn: { flex: 1, minWidth: 0, gap: 8 },
   packageCard: { borderRadius: 12 },
   packageDetails: { minHeight: 158, padding: 13 },
   packageLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 },
