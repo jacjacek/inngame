@@ -134,6 +134,7 @@ export type SheetSize = 'compact' | 'form' | 'detail';
 export function SheetPage({ children, size = 'detail' }: PropsWithChildren<{ size?: SheetSize }>) {
   const { styles } = useStyles();
   const responsive = useResponsiveLayout();
+  const clientReady = useClientReady();
   const entrance = useSharedValue(Platform.OS === 'web' ? 0 : 1);
   const reduceMotion = useReducedMotion();
 
@@ -156,6 +157,7 @@ export function SheetPage({ children, size = 'detail' }: PropsWithChildren<{ siz
   }), [reduceMotion]);
 
   if (Platform.OS !== 'web') return <>{children}</>;
+  if (!clientReady) return <LoadingScreen />;
 
   const compactSheet = responsive.isPhone;
   const sizeMaxHeight = size === 'compact' ? 560 : size === 'form' ? 740 : 920;
