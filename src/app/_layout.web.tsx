@@ -7,6 +7,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppStoreProvider, useAppStore } from '@/state/app-store';
 import { AppThemeProvider, themes } from '@/theme';
 
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
+
 const sheetOptions = {
   presentation: 'transparentModal' as const,
   animation: 'fade' as const,

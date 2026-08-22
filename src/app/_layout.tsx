@@ -7,10 +7,25 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AppStoreProvider, useAppStore } from '@/state/app-store';
 import { AppThemeProvider, themes } from '@/theme';
 
-const sheetOptions = {
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
+
+const detailSheetOptions = {
   presentation: 'formSheet' as const,
-  sheetAllowedDetents: [0.75],
+  sheetAllowedDetents: [0.9, 1],
   sheetInitialDetentIndex: 0,
+  sheetGrabberVisible: true,
+};
+
+const formSheetOptions = {
+  ...detailSheetOptions,
+  sheetAllowedDetents: [0.82, 1],
+};
+
+const compactSheetOptions = {
+  presentation: 'formSheet' as const,
+  sheetAllowedDetents: 'fitToContents' as const,
   sheetGrabberVisible: true,
 };
 
@@ -56,18 +71,18 @@ function ThemedNavigation() {
             animation: 'default',
           }}>
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="booking" options={sheetOptions} />
-          <Stack.Screen name="training/[id]" options={sheetOptions} />
-          <Stack.Screen name="package/[id]" options={sheetOptions} />
-          <Stack.Screen name="top-up/[id]" options={sheetOptions} />
-          <Stack.Screen name="trainers" options={sheetOptions} />
-          <Stack.Screen name="trainer/[id]" options={sheetOptions} />
-          <Stack.Screen name="clubs" options={sheetOptions} />
-          <Stack.Screen name="profile-form" options={sheetOptions} />
-          <Stack.Screen name="sport-picker" options={sheetOptions} />
-          <Stack.Screen name="tennis-level" options={sheetOptions} />
-          <Stack.Screen name="training-note" options={sheetOptions} />
-          <Stack.Screen name="availability-preferences" options={sheetOptions} />
+          <Stack.Screen name="booking" options={detailSheetOptions} />
+          <Stack.Screen name="training/[id]" options={detailSheetOptions} />
+          <Stack.Screen name="package/[id]" options={detailSheetOptions} />
+          <Stack.Screen name="top-up/[id]" options={formSheetOptions} />
+          <Stack.Screen name="trainers" options={detailSheetOptions} />
+          <Stack.Screen name="trainer/[id]" options={detailSheetOptions} />
+          <Stack.Screen name="clubs" options={detailSheetOptions} />
+          <Stack.Screen name="profile-form" options={formSheetOptions} />
+          <Stack.Screen name="sport-picker" options={compactSheetOptions} />
+          <Stack.Screen name="tennis-level" options={detailSheetOptions} />
+          <Stack.Screen name="training-note" options={formSheetOptions} />
+          <Stack.Screen name="availability-preferences" options={formSheetOptions} />
         </Stack>
       </ThemeProvider>
     </AppThemeProvider>

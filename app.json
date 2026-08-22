@@ -3,7 +3,7 @@
     "name": "MyMovio",
     "slug": "mymovio-expo",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/mymovio/icon.png",
     "scheme": "mymovio",
     "userInterfaceStyle": "automatic",

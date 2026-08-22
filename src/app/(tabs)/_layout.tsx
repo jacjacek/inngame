@@ -23,6 +23,7 @@ export default function TabsLayout() {
       }}
       minimizeBehavior="never"
       rippleColor="rgba(199,225,46,0.15)"
+      sidebarAdaptable
       tabBarRespectsIMEInsets
       tintColor={theme.colors.text}>
       <NativeTabs.Trigger name="index">

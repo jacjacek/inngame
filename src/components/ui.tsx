@@ -26,6 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { MotionPressable } from '@/components/motion';
+import { layout, useResponsiveLayout } from '@/responsive';
 import { AppTheme, useThemeStyles } from '@/theme';
 
 function useStyles() {
@@ -67,19 +68,32 @@ export function Screen({
   scroll = true,
   contentStyle,
   testID,
-}: PropsWithChildren<{ scroll?: boolean; contentStyle?: StyleProp<ViewStyle>; testID?: string }>) {
+  maxWidth = 'content',
+}: PropsWithChildren<{
+  scroll?: boolean;
+  contentStyle?: StyleProp<ViewStyle>;
+  testID?: string;
+  maxWidth?: 'content' | 'readable' | 'wide';
+}>) {
   const { styles } = useStyles();
+  const responsive = useResponsiveLayout();
+  const resolvedMaxWidth = maxWidth === 'readable'
+    ? layout.readableMaxWidth
+    : maxWidth === 'wide'
+      ? layout.wideMaxWidth
+      : responsive.contentMaxWidth;
+  const responsiveContentStyle = { width: '100%' as const, maxWidth: resolvedMaxWidth, alignSelf: 'center' as const, paddingHorizontal: responsive.gutter };
   const content = scroll ? (
     <ScrollView
       style={styles.flex}
-      contentContainerStyle={[styles.screenContent, contentStyle]}
+      contentContainerStyle={[styles.screenContent, responsiveContentStyle, contentStyle]}
       contentInsetAdjustmentBehavior="automatic"
       keyboardDismissMode="interactive"
       showsVerticalScrollIndicator={false}>
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.flex, contentStyle]}>{children}</View>
+    <View style={[styles.staticScreenContent, responsiveContentStyle, contentStyle]}>{children}</View>
   );
   return <SafeAreaView testID={testID} style={styles.screen} edges={['top', 'left', 'right']}>{content}</SafeAreaView>;
 }
@@ -103,10 +117,11 @@ export function Header({
   action?: ReactNode;
 }) {
   const { styles } = useStyles();
+  const { isDesktop, isPhone } = useResponsiveLayout();
   return (
     <View style={styles.header}>
       <View style={styles.flex}>
-        <Text style={styles.headerTitle}>{title}</Text>
+        <Text numberOfLines={2} style={[styles.headerTitle, isDesktop && styles.headerTitleDesktop, isPhone && styles.headerTitlePhone]}>{title}</Text>
         {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
       </View>
       {action}
@@ -114,8 +129,11 @@ export function Header({
   );
 }
 
-export function SheetPage({ children }: PropsWithChildren) {
+export type SheetSize = 'compact' | 'form' | 'detail';
+
+export function SheetPage({ children, size = 'detail' }: PropsWithChildren<{ size?: SheetSize }>) {
   const { styles } = useStyles();
+  const responsive = useResponsiveLayout();
   const entrance = useSharedValue(Platform.OS === 'web' ? 0 : 1);
   const reduceMotion = useReducedMotion();
 
@@ -139,17 +157,26 @@ export function SheetPage({ children }: PropsWithChildren) {
 
   if (Platform.OS !== 'web') return <>{children}</>;
 
+  const compactSheet = responsive.isPhone;
+  const sizeMaxHeight = size === 'compact' ? 560 : size === 'form' ? 740 : 920;
+  const panelWidth = compactSheet
+    ? responsive.width
+    : Math.min(responsive.width - responsive.gutter * 2, layout.sheetMaxWidth);
+  const panelHeight = compactSheet
+    ? Math.min(responsive.height * (size === 'compact' ? 0.88 : 0.94), sizeMaxHeight)
+    : Math.min(responsive.height - responsive.gutter * 2, sizeMaxHeight);
+
   return (
-    <View style={styles.sheetBackdrop}>
+    <View style={[styles.sheetBackdrop, compactSheet && styles.sheetBackdropCompact]}>
       <Animated.View pointerEvents="none" style={[styles.sheetBackdropTint, backdropStyle]} />
-      <Animated.View style={[styles.sheetPanel, panelStyle]}>{children}</Animated.View>
+      <Animated.View style={[styles.sheetPanel, { width: panelWidth, height: panelHeight, maxHeight: panelHeight }, compactSheet && styles.sheetPanelCompact, panelStyle]}>{children}</Animated.View>
     </View>
   );
 }
 
-export function withSheetPage(Component: React.ComponentType) {
+export function withSheetPage(Component: React.ComponentType, size: SheetSize = 'detail') {
   return function SheetRoute() {
-    return <SheetPage><Component /></SheetPage>;
+    return <SheetPage size={size}><Component /></SheetPage>;
   };
 }
 
@@ -417,24 +444,29 @@ export function endTime(training: { start: string; durationMinutes: number }) {
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, minWidth: 0 },
   center: { alignItems: 'center', justifyContent: 'center' },
   screen: { flex: 1, backgroundColor: theme.colors.background },
-  screenContent: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 42, gap: 14 },
+  screenContent: { paddingTop: 12, paddingBottom: 42, gap: 14 },
+  staticScreenContent: { flex: 1, minWidth: 0 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
-  headerTitle: { color: theme.colors.text, fontSize: 32, fontWeight: '700', letterSpacing: -0.8 },
+  headerTitle: { color: theme.colors.text, fontSize: 34, fontWeight: '700', letterSpacing: -0.8 },
+  headerTitleDesktop: { fontSize: 38, letterSpacing: -1 },
+  headerTitlePhone: { fontSize: 30 },
   headerSubtitle: { color: theme.colors.secondaryText, fontSize: 14, marginTop: 3 },
   modalHeaderSafe: { backgroundColor: theme.colors.background },
-  sheetBackdrop: { flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-end' },
+  sheetBackdrop: { flex: 1, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  sheetBackdropCompact: { justifyContent: 'flex-end' },
   sheetBackdropTint: { ...StyleSheet.absoluteFill, backgroundColor: theme.colors.scrim },
-  sheetPanel: { height: '75%', maxHeight: '75%', overflow: 'hidden', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: theme.colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, shadowColor: theme.colors.shadow, shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: -8 } },
+  sheetPanel: { overflow: 'hidden', borderRadius: 24, backgroundColor: theme.colors.background, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, shadowColor: theme.colors.shadow, shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 8 } },
+  sheetPanelCompact: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   modalHeader: { height: 58, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   modalTitle: { color: theme.colors.text, fontSize: 17, fontWeight: '600' },
   doneText: { color: theme.colors.accentText, fontSize: 16, fontWeight: '600' },
   headerSpacer: { width: 44 },
   card: { backgroundColor: theme.colors.surfaceSoft, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, overflow: 'hidden' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2, marginTop: 8 },
-  sectionTitle: { color: theme.colors.text, fontSize: 15, fontWeight: '600' },
+  sectionHeader: { minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 2, marginTop: 8 },
+  sectionTitle: { flexShrink: 1, color: theme.colors.text, fontSize: 15, fontWeight: '600' },
   button: { minHeight: 52, paddingHorizontal: 18, borderRadius: 14, flexDirection: 'row', gap: 9, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   buttonCompact: { minHeight: 42, paddingHorizontal: 14, borderRadius: 12 },
   buttonPrimary: { backgroundColor: theme.colors.lime },
@@ -447,7 +479,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   disabled: { opacity: 0.42 },
   pressed: { opacity: 0.72 },
   iconButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  pill: { minHeight: 34, paddingHorizontal: 12, borderRadius: theme.radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  pill: { minHeight: 40, paddingHorizontal: 12, borderRadius: theme.radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   pillActive: { backgroundColor: theme.colors.lime, borderColor: theme.colors.lime },
   pillText: { color: theme.colors.secondaryText, fontSize: 13, fontWeight: '600' },
   pillTextActive: { color: theme.colors.onAccent },

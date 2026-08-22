@@ -16,9 +16,11 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <meta name="theme-color" content={background} />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <style>{`
-          html, body, #root { height: 100%; width: 100%; }
-          body { margin: 0; overflow: hidden; background: ${background}; }
-          #root { display: flex; }
+          *, *::before, *::after { box-sizing: border-box; }
+          html, body, #root { height: 100%; width: 100%; min-width: 0; }
+          html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+          body { margin: 0; overflow: hidden; overscroll-behavior: none; background: ${background}; }
+          #root { display: flex; min-height: 100%; }
         `}</style>
       </head>
       <body {...bodyAttributes}>

@@ -14,6 +14,7 @@ const sharedTheme = {
     md: 16,
     lg: 22,
     xl: 30,
+    xxl: 40,
   },
   font: {
     display: Platform.select({ ios: 'System', android: 'sans-serif-light', default: 'System' }),
