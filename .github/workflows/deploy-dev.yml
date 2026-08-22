@@ -1,0 +1,82 @@
+name: Build and deploy development web app
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-tenis
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://dev-tenis.walasek.xyz/
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Export static Expo website
+        run: npx expo export --platform web
+
+      - name: Configure deployment SSH key
+        env:
+          DEPLOY_KEY: ${{ secrets.DEV_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEV_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload immutable release
+        env:
+          DEPLOY_HOST: bob287.mikrus.xyz
+          DEPLOY_PORT: "10287"
+          DEPLOY_USER: deploy-tenis
+          RELEASE_ROOT: /var/www/dev-tenis/releases
+        run: |
+          release="$RELEASE_ROOT/$GITHUB_SHA"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$release'"
+          rsync -az --delete -e "ssh -p $DEPLOY_PORT" dist/ "$DEPLOY_USER@$DEPLOY_HOST:$release/"
+
+      - name: Activate release atomically
+        env:
+          DEPLOY_HOST: bob287.mikrus.xyz
+          DEPLOY_PORT: "10287"
+          DEPLOY_USER: deploy-tenis
+          RELEASE_ROOT: /var/www/dev-tenis/releases
+          SITE_ROOT: /var/www/dev-tenis
+        run: |
+          release="$RELEASE_ROOT/$GITHUB_SHA"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "test -f '$release/index.html' && ln -sfn '$release' '$SITE_ROOT/current'"
+
+      - name: Retain the five newest releases
+        if: success()
+        env:
+          DEPLOY_HOST: bob287.mikrus.xyz
+          DEPLOY_PORT: "10287"
+          DEPLOY_USER: deploy-tenis
+          RELEASE_ROOT: /var/www/dev-tenis/releases
+        run: |
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "find '$RELEASE_ROOT' -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | tail -n +6 | cut -d' ' -f2- | xargs -r rm -rf --"
