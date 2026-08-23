@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, ModalHeader, selectionHaptic, withSheetPage } from '@/components/ui';
@@ -29,6 +29,19 @@ function TennisLevelScreen() {
   const router = useRouter();
   const store = useAppStore();
   const [selected, setSelected] = useState(store.tennisLevel);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    const saved = await store.setTennisLevel(selected);
+    setSaving(false);
+    if (!saved) {
+      Alert.alert('Nie udało się zapisać poziomu', store.error ?? 'Spróbuj ponownie.');
+      return;
+    }
+    router.back();
+  };
   return (
     <View style={styles.page}>
       <ModalHeader title="Poziom tenisowy" />
@@ -51,7 +64,7 @@ function TennisLevelScreen() {
         </View>
       </ScrollView>
       <SafeAreaView edges={['bottom']} style={styles.bottom}>
-        <AppButton title="Zapisz" onPress={() => { store.setTennisLevel(selected); router.back(); }} />
+        <AppButton title={saving ? 'Zapisywanie…' : 'Zapisz'} disabled={saving || !selected} onPress={() => { void save(); }} />
       </SafeAreaView>
     </View>
   );

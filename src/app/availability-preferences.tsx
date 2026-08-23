@@ -1,18 +1,19 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   availabilityTimeRangeError,
-  AvailabilityLeadTime,
+  type AvailabilityLeadTime,
+  type AvailabilityTimeRange,
   dayPartOptions,
   overlappingAvailabilityRangeIds,
   preferenceSummary,
+  type WeekdayKey,
   weekdayOptions,
 } from '@/data/availability';
-import { trainers } from '@/data/models';
 import {
   AppButton,
   Divider,
@@ -23,6 +24,7 @@ import {
   ToggleRow,
   selectionHaptic,
   successHaptic,
+  useClientReady,
   withSheetPage,
 } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
@@ -43,13 +45,34 @@ function HydratedAvailabilityPreferencesScreen() {
   const router = useRouter();
   const { returnConversationId, trainerId } = useLocalSearchParams<{ returnConversationId?: string; trainerId?: string }>();
   const store = useAppStore();
+  const trainers = store.trainers;
   const trainer = trainers.find((item) => item.id === trainerId);
+
+  if (trainerId && !trainer) {
+    return (
+      <View testID="availability-preferences-hydrated" style={styles.page}>
+        <ModalHeader title="Wolne terminy" />
+        <AvailabilityState
+          icon={store.error ? 'cloud-offline-outline' : 'person-outline'}
+          title={store.error ? 'Nie udało się pobrać ustawień' : 'Ten trener nie jest dostępny'}
+          description={store.error ?? 'Profil mógł zostać wyłączony lub adres jest już nieaktualny.'}
+          action={store.error ? 'Spróbuj ponownie' : 'Wróć do listy'}
+          onPress={() => {
+            if (store.error) void store.refresh();
+            else router.replace('/availability-preferences');
+          }}
+        />
+      </View>
+    );
+  }
 
   if (!trainer) {
     return (
       <View testID="availability-preferences-hydrated" style={styles.page}>
         <ModalHeader title="Wolne terminy" />
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {store.error && trainers.length ? <ErrorBanner message={store.error} /> : null}
+
           <View style={styles.intro}>
             <View style={styles.introIcon}>
               <Ionicons name="notifications-outline" size={22} color={theme.colors.accentText} />
@@ -66,49 +89,90 @@ function HydratedAvailabilityPreferencesScreen() {
               title="Powiadomienia o wolnych terminach"
               subtitle="Główne ustawienie dla wszystkich trenerów"
               value={store.availabilityNotificationsEnabled}
-              onValueChange={store.setAvailabilityNotificationsEnabled}
+              onValueChange={(enabled) => void store.setAvailabilityNotificationsEnabled(enabled)}
             />
           </View>
 
-          <View style={[styles.section, !store.availabilityNotificationsEnabled && styles.disabled]}>
-            <Text style={styles.sectionTitle}>Trenerzy</Text>
-            {trainers.map((item, index) => {
-              const preference = store.availabilityPreferences[item.id];
-              return (
-                <View key={item.id}>
-                  <Pressable
-                    disabled={!store.availabilityNotificationsEnabled}
-                    onPress={() => {
-                      selectionHaptic();
-                      router.push({ pathname: '/availability-preferences', params: { trainerId: item.id } });
-                    }}
-                    style={({ pressed }) => [styles.trainerRow, pressed && styles.pressed]}>
-                    <View style={[styles.trainerInitials, preference.enabled && styles.trainerInitialsActive]}>
-                      <Text style={[styles.trainerInitialsText, preference.enabled && styles.trainerInitialsTextActive]}>{item.initials}</Text>
-                    </View>
-                    <View style={styles.flex}>
-                      <Text style={styles.trainerName}>{item.name}</Text>
-                      <Text numberOfLines={1} style={styles.trainerSummary}>{preferenceSummary(preference)}</Text>
-                    </View>
-                    <View style={[styles.statusDot, preference.enabled && styles.statusDotActive]} />
-                    <Ionicons name="chevron-forward" size={17} color={theme.colors.tertiaryText} />
-                  </Pressable>
-                  {index < trainers.length - 1 ? <Divider inset={58} /> : null}
-                </View>
-              );
-            })}
-          </View>
+          {store.error && !trainers.length ? (
+            <AvailabilityState
+              icon="cloud-offline-outline"
+              title="Nie udało się pobrać trenerów"
+              description={store.error}
+              action={store.refreshing ? 'Odświeżanie…' : 'Spróbuj ponownie'}
+              onPress={() => void store.refresh()}
+            />
+          ) : trainers.length ? (
+            <View style={[styles.section, !store.availabilityNotificationsEnabled && styles.disabled]}>
+              <Text style={styles.sectionTitle}>Trenerzy</Text>
+              {trainers.map((item, index) => {
+                const preference = store.availabilityPreferences[item.id];
+                const enabled = Boolean(preference?.enabled);
+                return (
+                  <View key={item.id}>
+                    <Pressable
+                      disabled={!store.availabilityNotificationsEnabled}
+                      onPress={() => {
+                        selectionHaptic();
+                        router.push({ pathname: '/availability-preferences', params: { trainerId: item.id } });
+                      }}
+                      style={({ pressed }) => [styles.trainerRow, pressed && styles.pressed]}>
+                      <View style={[styles.trainerInitials, enabled && styles.trainerInitialsActive]}>
+                        <Text style={[styles.trainerInitialsText, enabled && styles.trainerInitialsTextActive]}>{item.initials}</Text>
+                      </View>
+                      <View style={styles.flex}>
+                        <Text style={styles.trainerName}>{item.name}</Text>
+                        <Text numberOfLines={1} style={styles.trainerSummary}>
+                          {preference ? preferenceSummary(preference) : 'Brak zapisanych preferencji'}
+                        </Text>
+                      </View>
+                      <View style={[styles.statusDot, enabled && styles.statusDotActive]} />
+                      <Ionicons name="chevron-forward" size={17} color={theme.colors.tertiaryText} />
+                    </Pressable>
+                    {index < trainers.length - 1 ? <Divider inset={58} /> : null}
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <AvailabilityState
+              icon="people-outline"
+              title="Brak dostępnych trenerów"
+              description="Preferencje będzie można ustawić po dodaniu trenerów do katalogu."
+              action="Odśwież katalog"
+              onPress={() => void store.refresh()}
+            />
+          )}
         </ScrollView>
       </View>
     );
   }
 
   const preference = store.availabilityPreferences[trainer.id];
-  const preferencesActive = store.availabilityNotificationsEnabled && preference.enabled;
+  if (!preference) {
+    return (
+      <View testID="availability-preferences-hydrated" style={styles.page}>
+        <ModalHeader title="Wolne terminy" />
+        <AvailabilityState
+          icon="cloud-offline-outline"
+          title="Brak ustawień dostępności"
+          description={store.error ?? 'Nie udało się przygotować preferencji dla tego trenera.'}
+          action={store.refreshing ? 'Odświeżanie…' : 'Spróbuj ponownie'}
+          onPress={() => void store.refresh()}
+        />
+      </View>
+    );
+  }
+
+  const hasAvailabilityWindow = weekdayOptions.some((day) => (
+    preference.dayParts[day.key].length > 0 || (preference.preciseHours[day.key]?.length ?? 0) > 0
+  ));
+  const preferencesActive = store.availabilityNotificationsEnabled;
   return (
     <View testID="availability-preferences-hydrated" style={styles.page}>
       <ModalHeader title="Wolne terminy" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {store.error ? <ErrorBanner message={store.error} /> : null}
+
         <View style={styles.trainerHeader}>
           <View style={styles.trainerInitialsLarge}><Text style={styles.trainerInitialsLargeText}>{trainer.initials}</Text></View>
           <View style={styles.flex}>
@@ -123,7 +187,7 @@ function HydratedAvailabilityPreferencesScreen() {
             title="Powiadomienia globalne"
             subtitle="Główne ustawienie dla wszystkich trenerów"
             value={store.availabilityNotificationsEnabled}
-            onValueChange={store.setAvailabilityNotificationsEnabled}
+            onValueChange={(enabled) => void store.setAvailabilityNotificationsEnabled(enabled)}
           />
           <Divider inset={0} />
           <ToggleRow
@@ -131,7 +195,13 @@ function HydratedAvailabilityPreferencesScreen() {
             title="Powiadamiaj o wolnych terminach"
             subtitle="Dostaniesz alert tylko dla pasujących pór"
             value={preference.enabled}
-            onValueChange={(enabled) => store.setAvailabilityEnabled(trainer.id, enabled)}
+            onValueChange={(enabled) => {
+              if (enabled && !hasAvailabilityWindow) {
+                Alert.alert('Najpierw wybierz porę', 'Zaznacz co najmniej jeden dzień i porę treningu, a następnie włącz alerty dla trenera.');
+                return;
+              }
+              void store.setAvailabilityEnabled(trainer.id, enabled);
+            }}
           />
         </View>
 
@@ -164,7 +234,7 @@ function HydratedAvailabilityPreferencesScreen() {
                       accessibilityState={{ checked: active }}
                       onPress={() => {
                         selectionHaptic();
-                        store.toggleAvailabilityDayPart(trainer.id, day.key, part.key);
+                        void store.toggleAvailabilityDayPart(trainer.id, day.key, part.key);
                       }}
                       style={[styles.matrixCell, active && styles.matrixCellActive]}>
                       {active ? <Ionicons name="checkmark" size={17} color={theme.colors.onAccent} /> : null}
@@ -181,7 +251,7 @@ function HydratedAvailabilityPreferencesScreen() {
               title="Doprecyzuj godziny"
               subtitle="Dodaj kilka osobnych okien jednego dnia"
               value={preference.preciseHoursEnabled}
-              onValueChange={(preciseHoursEnabled) => store.setAvailabilityPreference(trainer.id, { preciseHoursEnabled })}
+              onValueChange={(preciseHoursEnabled) => void store.setAvailabilityPreference(trainer.id, { preciseHoursEnabled })}
             />
           </View>
 
@@ -197,52 +267,25 @@ function HydratedAvailabilityPreferencesScreen() {
                       <Text style={styles.preciseDayTitle}>{day.label}</Text>
                       <Pressable
                         accessibilityRole="button"
-                        onPress={() => store.addAvailabilityTimeRange(trainer.id, day.key)}
+                        onPress={() => void store.addAvailabilityTimeRange(trainer.id, day.key)}
                         style={({ pressed }) => [styles.addRange, pressed && styles.pressed]}>
                         <Ionicons name="add" size={15} color={theme.colors.accentText} />
                         <Text style={styles.addRangeText}>Dodaj zakres</Text>
                       </Pressable>
                     </View>
                     {ranges.length ? ranges.map((range) => {
-                      const error = availabilityTimeRangeError(range)
-                        ?? (overlappingIds.has(range.id) ? 'Zakres nakłada się na inne okno' : undefined);
                       return (
-                        <View key={range.id}>
-                          <View style={styles.rangeRow}>
-                            <TextInput
-                              accessibilityLabel={`${day.label}, początek zakresu`}
-                              value={range.start}
-                              onChangeText={(start) => store.updateAvailabilityTimeRange(trainer.id, day.key, range.id, { start })}
-                              placeholder="08:00"
-                              placeholderTextColor={theme.colors.tertiaryText}
-                              keyboardType="numbers-and-punctuation"
-                              maxLength={5}
-                              style={[styles.timeInput, error && styles.timeInputError]}
-                            />
-                            <Text style={styles.rangeDash}>–</Text>
-                            <TextInput
-                              accessibilityLabel={`${day.label}, koniec zakresu`}
-                              value={range.end}
-                              onChangeText={(end) => store.updateAvailabilityTimeRange(trainer.id, day.key, range.id, { end })}
-                              placeholder="11:00"
-                              placeholderTextColor={theme.colors.tertiaryText}
-                              keyboardType="numbers-and-punctuation"
-                              maxLength={5}
-                              style={[styles.timeInput, error && styles.timeInputError]}
-                            />
-                            <Pressable
-                              accessibilityLabel={`Usuń zakres ${day.label} ${range.start}–${range.end}`}
-                              accessibilityRole="button"
-                              onPress={() => store.removeAvailabilityTimeRange(trainer.id, day.key, range.id)}
-                              style={styles.removeRange}>
-                              <Ionicons name="close" size={18} color={theme.colors.secondaryText} />
-                            </Pressable>
-                          </View>
-                          {error ? <Text style={styles.rangeError}>{error}. Ten zakres zostanie pominięty.</Text> : null}
-                        </View>
+                        <AvailabilityTimeRangeEditor
+                          key={range.id}
+                          day={day.key}
+                          dayLabel={day.label}
+                          overlapping={overlappingIds.has(range.id)}
+                          range={range}
+                          trainerId={trainer.id}
+                        />
                       );
                     }) : (
-                      <Pressable accessibilityRole="button" onPress={() => store.addAvailabilityTimeRange(trainer.id, day.key)} style={styles.emptyRange}>
+                      <Pressable accessibilityRole="button" onPress={() => void store.addAvailabilityTimeRange(trainer.id, day.key)} style={styles.emptyRange}>
                         <Text style={styles.emptyRangeText}>Dodaj pierwsze dokładne okno</Text>
                       </Pressable>
                     )}
@@ -254,9 +297,11 @@ function HydratedAvailabilityPreferencesScreen() {
 
           <View style={styles.sectionHeading}>
             <Text style={styles.sectionTitle}>Jak blisko terminu?</Text>
-            <Text style={styles.sectionDescription}>Określ, jak spontaniczne propozycje mają uruchamiać push.</Text>
+            <Text style={styles.sectionDescription}>Określ, jak spontaniczne propozycje mają uruchamiać alert w aplikacji.</Text>
           </View>
-          <Segmented values={leadTimes} value={preference.leadTime} onChange={(leadTime) => store.setAvailabilityPreference(trainer.id, { leadTime })} />
+          <View style={!hasAvailabilityWindow && styles.disabled} pointerEvents={hasAvailabilityWindow ? 'auto' : 'none'}>
+            <Segmented values={leadTimes} value={preference.leadTime} onChange={(leadTime) => void store.setAvailabilityPreference(trainer.id, { leadTime })} />
+          </View>
 
           <View style={styles.section}>
             <InfoRow
@@ -269,7 +314,7 @@ function HydratedAvailabilityPreferencesScreen() {
         </View>
       </ScrollView>
       <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-        <AppButton title="Gotowe" onPress={() => {
+        <AppButton disabled={store.mutationPending} title={store.mutationPending ? 'Zapisywanie…' : 'Gotowe'} onPress={() => {
           successHaptic();
           if (returnConversationId) {
             if (router.canDismiss()) {
@@ -286,10 +331,116 @@ function HydratedAvailabilityPreferencesScreen() {
   );
 }
 
+function AvailabilityTimeRangeEditor({
+  day,
+  dayLabel,
+  overlapping,
+  range,
+  trainerId,
+}: {
+  day: WeekdayKey;
+  dayLabel: string;
+  overlapping: boolean;
+  range: AvailabilityTimeRange;
+  trainerId: string;
+}) {
+  const { styles, theme } = useStyles();
+  const store = useAppStore();
+  const [start, setStart] = React.useState(range.start);
+  const [end, setEnd] = React.useState(range.end);
+
+  const draft = { ...range, start, end };
+  const error = availabilityTimeRangeError(draft)
+    ?? (overlapping ? 'Zakres nakłada się na inne okno' : undefined);
+
+  const save = () => {
+    if (availabilityTimeRangeError(draft)) return;
+    const patch = {
+      ...(start !== range.start ? { start } : {}),
+      ...(end !== range.end ? { end } : {}),
+    };
+    if (!Object.keys(patch).length) return;
+    void store.updateAvailabilityTimeRange(trainerId, day, range.id, patch);
+  };
+
+  return (
+    <View>
+      <View style={styles.rangeRow}>
+        <TextInput
+          accessibilityLabel={`${dayLabel}, początek zakresu`}
+          value={start}
+          onChangeText={setStart}
+          onBlur={save}
+          placeholder="08:00"
+          placeholderTextColor={theme.colors.tertiaryText}
+          keyboardType="numbers-and-punctuation"
+          maxLength={5}
+          style={[styles.timeInput, error && styles.timeInputError]}
+        />
+        <Text style={styles.rangeDash}>–</Text>
+        <TextInput
+          accessibilityLabel={`${dayLabel}, koniec zakresu`}
+          value={end}
+          onChangeText={setEnd}
+          onBlur={save}
+          placeholder="11:00"
+          placeholderTextColor={theme.colors.tertiaryText}
+          keyboardType="numbers-and-punctuation"
+          maxLength={5}
+          style={[styles.timeInput, error && styles.timeInputError]}
+        />
+        <Pressable
+          accessibilityLabel={`Usuń zakres ${dayLabel} ${range.start}–${range.end}`}
+          accessibilityRole="button"
+          onPress={() => void store.removeAvailabilityTimeRange(trainerId, day, range.id)}
+          style={styles.removeRange}>
+          <Ionicons name="close" size={18} color={theme.colors.secondaryText} />
+        </Pressable>
+      </View>
+      {error ? <Text style={styles.rangeError}>{error}. Popraw zakres, aby go zapisać.</Text> : null}
+    </View>
+  );
+}
+
 function AvailabilityPreferencesScreen() {
   const store = useAppStore();
-  if (!store.hydrated) return <LoadingScreen />;
+  const clientReady = useClientReady();
+  if (!clientReady || !store.hydrated || store.loading) return <LoadingScreen />;
   return <HydratedAvailabilityPreferencesScreen />;
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  const { styles, theme } = useStyles();
+  return (
+    <View style={styles.errorBanner}>
+      <Ionicons name="warning-outline" size={18} color={theme.colors.coral} />
+      <Text style={styles.errorText}>{message}</Text>
+    </View>
+  );
+}
+
+function AvailabilityState({
+  icon,
+  title,
+  description,
+  action,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  title: string;
+  description: string;
+  action: string;
+  onPress: () => void;
+}) {
+  const { styles, theme } = useStyles();
+  return (
+    <View style={styles.availabilityState}>
+      <Ionicons name={icon} size={27} color={theme.colors.secondaryText} />
+      <Text style={styles.availabilityStateTitle}>{title}</Text>
+      <Text style={styles.availabilityStateDescription}>{description}</Text>
+      <AppButton compact variant="secondary" title={action} onPress={onPress} />
+    </View>
+  );
 }
 
 export default withSheetPage(AvailabilityPreferencesScreen);
@@ -298,6 +449,11 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   page: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   content: { padding: 16, paddingBottom: 28, gap: 22 },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 9, padding: 12, borderRadius: 14, backgroundColor: theme.colors.dangerSoft },
+  errorText: { flex: 1, color: theme.colors.danger, fontSize: 12, lineHeight: 17 },
+  availabilityState: { minHeight: 240, paddingHorizontal: 30, alignItems: 'center', justifyContent: 'center', gap: 9 },
+  availabilityStateTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  availabilityStateDescription: { color: theme.colors.secondaryText, fontSize: 12.5, lineHeight: 18, textAlign: 'center', marginBottom: 6 },
   intro: { flexDirection: 'row', gap: 13, alignItems: 'flex-start', padding: 16, borderRadius: 18, backgroundColor: theme.colors.surfaceSoft },
   introIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.accentSoft },
   introTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },

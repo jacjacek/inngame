@@ -11,7 +11,8 @@ permissions:
 
 concurrency:
   group: dev-tenis
-  cancel-in-progress: true
+  # Never interrupt a run between activation and its smoke/rollback phase.
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -19,6 +20,9 @@ jobs:
     environment:
       name: development
       url: https://dev-tenis.walasek.xyz/
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
     steps:
       - name: Check out source
@@ -30,11 +34,69 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Validate public Supabase configuration
+        run: |
+          test -n "$EXPO_PUBLIC_SUPABASE_URL"
+          test -n "$EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          if test "$EXPO_PUBLIC_SUPABASE_URL" != "https://phvcbbqshdecbsizxqjw.supabase.co"; then
+            echo "EXPO_PUBLIC_SUPABASE_URL must point to the MyMovio Supabase project" >&2
+            exit 1
+          fi
+          case "$EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY" in
+            sb_publishable_*) ;;
+            sb_secret_*|eyJ*)
+              echo "Refusing a secret or legacy JWT key; configure the project's sb_publishable_* key" >&2
+              exit 1
+              ;;
+            *)
+              echo "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be an sb_publishable_* key" >&2
+              exit 1
+              ;;
+          esac
+          curl --fail --silent --show-error --retry 3 --max-time 15 \
+            -H "apikey: $EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
+            "$EXPO_PUBLIC_SUPABASE_URL/auth/v1/settings" >/dev/null
+
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Verify application
+        run: npm run lint && npm run typecheck
+
       - name: Export static Expo website
-        run: npx expo export --platform web
+        run: npm run build:web
+
+      - name: Reject local or placeholder configuration
+        run: |
+          if grep -R -q -E "127\.0\.0\.1:54321|replace-with-project-publishable-key|sb_secret_" dist; then
+            echo "The exported bundle contains local, placeholder or secret Supabase configuration" >&2
+            exit 1
+          fi
+
+      - name: Create immutable release manifest
+        id: release_manifest
+        env:
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          printf '{"github_sha":"%s","run_id":"%s","run_attempt":"%s","release_id":"%s"}\n' \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$RELEASE_ID" \
+            > dist/.release.json
+          (
+            cd dist
+            find . -type f ! -path './.release-sha256' -print0 \
+              | sort -z \
+              | xargs -0 sha256sum
+          ) > dist/.release-sha256
+          manifest_sha256=$(sha256sum dist/.release-sha256 | cut -d' ' -f1)
+          printf 'sha256=%s\n' "$manifest_sha256" >> "$GITHUB_OUTPUT"
+          {
+            printf '### Immutable development release candidate\n\n'
+            printf -- '- release id: `%s`\n' "$RELEASE_ID"
+            printf -- '- Git commit: `%s`\n' "$GITHUB_SHA"
+            printf -- '- manifest SHA-256: `%s`\n' "$manifest_sha256"
+          } >> "$GITHUB_STEP_SUMMARY"
+          printf '::notice title=Release candidate attestation::release_id=%s manifest_sha256=%s\n' \
+            "$RELEASE_ID" "$manifest_sha256"
 
       - name: Configure deployment SSH key
         env:
@@ -53,22 +115,137 @@ jobs:
           DEPLOY_PORT: "10287"
           DEPLOY_USER: deploy-tenis
           RELEASE_ROOT: /var/www/dev-tenis/releases
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          release="$RELEASE_ROOT/$GITHUB_SHA"
-          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$release'"
+          release="$RELEASE_ROOT/$RELEASE_ID"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "test ! -e '$release' && mkdir -p '$release'"
           rsync -az --delete -e "ssh -p $DEPLOY_PORT" dist/ "$DEPLOY_USER@$DEPLOY_HOST:$release/"
 
-      - name: Activate release atomically
+      - name: Validate uploaded release
+        env:
+          DEPLOY_HOST: bob287.mikrus.xyz
+          DEPLOY_PORT: "10287"
+          DEPLOY_USER: deploy-tenis
+          RELEASE_ROOT: /var/www/dev-tenis/releases
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          EXPECTED_GITHUB_SHA: ${{ github.sha }}
+          EXPECTED_MANIFEST_SHA256: ${{ steps.release_manifest.outputs.sha256 }}
+        run: |
+          release="$RELEASE_ROOT/$RELEASE_ID"
+          ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- "$release" "$EXPECTED_GITHUB_SHA" "$RELEASE_ID" "$EXPECTED_MANIFEST_SHA256" <<'REMOTE'
+          set -Eeuo pipefail
+          release=$1
+          expected_github_sha=$2
+          release_id=$3
+          expected_manifest_sha256=$4
+          inventory=$(mktemp /tmp/mymovio-dev-release-inventory.XXXXXX)
+          trap 'rm -f "$inventory"' EXIT
+
+          test -d "$release"
+          test ! -L "$release"
+          unexpected=$(find -P "$release" -mindepth 1 ! -type d ! -type f -print -quit)
+          test -z "$unexpected"
+          test "$(sha256sum "$release/.release-sha256" | cut -d' ' -f1)" = "$expected_manifest_sha256"
+          (
+            cd "$release"
+            find . -type f ! -path './.release-sha256' -print0 \
+              | sort -z \
+              | xargs -0 sha256sum
+          ) > "$inventory"
+          cmp "$inventory" "$release/.release-sha256"
+          (
+            cd "$release"
+            sha256sum -c .release-sha256 >/dev/null
+          )
+          grep -Fq "\"github_sha\":\"$expected_github_sha\"" "$release/.release.json"
+          grep -Fq "\"release_id\":\"$release_id\"" "$release/.release.json"
+          test -s "$release/index.html"
+          test -s "$release/booking.html"
+          test -s "$release/training/[id].html"
+          test -s "$release/trainer/[id].html"
+          test -n "$(find "$release/_expo/static/js" -type f -size +0c -print -quit)"
+          grep -RqsF 'https://phvcbbqshdecbsizxqjw.supabase.co' "$release/_expo/static/js"
+          ! grep -RqsE '127\.0\.0\.1:54321|replace-with-project-publishable-key|sb_secret_' "$release"
+          REMOTE
+
+      - name: Activate atomically and smoke-test origin
         env:
           DEPLOY_HOST: bob287.mikrus.xyz
           DEPLOY_PORT: "10287"
           DEPLOY_USER: deploy-tenis
           RELEASE_ROOT: /var/www/dev-tenis/releases
           SITE_ROOT: /var/www/dev-tenis
+          RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          ORIGIN_HOST: dev-tenis.walasek.xyz
+          MANIFEST_SHA256: ${{ steps.release_manifest.outputs.sha256 }}
         run: |
-          release="$RELEASE_ROOT/$GITHUB_SHA"
+          release="$RELEASE_ROOT/$RELEASE_ID"
           ssh -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "test -f '$release/index.html' && ln -sfn '$release' '$SITE_ROOT/current'"
+            bash -s -- "$release" "$SITE_ROOT" "$ORIGIN_HOST" "$RELEASE_ID" <<'REMOTE'
+          set -Eeuo pipefail
+          release=$1
+          site_root=$2
+          origin_host=$3
+          release_id=$4
+          next_link="$site_root/.current-$release_id"
+          rollback_link="$site_root/.rollback-$release_id"
+          activated=false
+          verified=false
+
+          exec 9>"$site_root/.deploy.lock"
+          flock -x 9
+          previous=$(readlink -f "$site_root/current" || true)
+
+          cleanup() {
+            status=$?
+            trap - EXIT HUP INT TERM
+            set +e
+            if test "$activated" = true && test "$verified" != true; then
+              rollback_ok=true
+              if test -n "$previous"; then
+                if ! mv -Tf "$rollback_link" "$site_root/current"; then rollback_ok=false; fi
+              else
+                if ! unlink "$site_root/current"; then rollback_ok=false; fi
+              fi
+              if test "$rollback_ok" = true; then
+                echo 'Deployment interrupted or origin smoke failed; previous release restored' >&2
+              else
+                echo 'CRITICAL: deployment failed and automatic rollback also failed' >&2
+                status=1
+              fi
+            fi
+            rm -f "$next_link" "$rollback_link"
+            exit "$status"
+          }
+          trap cleanup EXIT
+          trap 'exit 1' HUP INT TERM
+
+          if test -n "$previous"; then
+            ln -s "$previous" "$rollback_link"
+          fi
+          ln -s "$release" "$next_link"
+          activated=true
+          mv -Tf "$next_link" "$site_root/current"
+          if ! {
+            curl --noproxy '*' -fsS --resolve "$origin_host:80:[::1]" "http://$origin_host/" | cmp - "$release/index.html" \
+              && curl --noproxy '*' -fsS --resolve "$origin_host:80:[::1]" "http://$origin_host/booking" | cmp - "$release/booking.html" \
+              && curl --noproxy '*' -fsS --resolve "$origin_host:80:[::1]" "http://$origin_host/training/release-smoke" | cmp - "$release/training/[id].html" \
+              && curl --noproxy '*' -fsS --resolve "$origin_host:80:[::1]" "http://$origin_host/__spa_release_smoke__" | cmp - "$release/index.html"
+          }; then
+            exit 1
+          fi
+          verified=true
+          REMOTE
+          {
+            printf '### Activated and origin-verified development release\n\n'
+            printf -- '- release id: `%s`\n' "$RELEASE_ID"
+            printf -- '- Git commit: `%s`\n' "$GITHUB_SHA"
+            printf -- '- manifest SHA-256: `%s`\n' "$MANIFEST_SHA256"
+          } >> "$GITHUB_STEP_SUMMARY"
+          printf '::notice title=Verified development release::release_id=%s manifest_sha256=%s\n' \
+            "$RELEASE_ID" "$MANIFEST_SHA256"
 
       - name: Retain the five newest releases
         if: success()

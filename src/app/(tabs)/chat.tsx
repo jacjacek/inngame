@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   BackHandler,
   Image,
   ImageSourcePropType,
@@ -17,7 +18,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AvailabilityOffer, doesOfferMatchPreference, offerTimeLabel, preferenceSummary } from '@/data/availability';
-import { conversations, trainers } from '@/data/models';
 import { conversationPhotos } from '@/data/trainer-media';
 import { layout } from '@/responsive';
 import { useAppStore } from '@/state/app-store';
@@ -33,15 +33,23 @@ export default function ChatScreen() {
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId?: string }>();
   const store = useAppStore();
-  const [selectedId, setSelectedId] = useState(conversationId ?? conversations[0].id);
+  const conversations = store.conversations;
+  const trainers = store.trainers;
+  const markConversationRead = store.markConversationRead;
+  const [requestedConversationId, setSelectedId] = useState(conversationId ?? '');
+  const selectedId = conversationId
+    ?? conversations.find((item) => item.id === requestedConversationId)?.id
+    ?? conversations[0]?.id
+    ?? '';
   const [showList, setShowList] = useState(!conversationId);
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState('');
   const [composerHeight, setComposerHeight] = useState(38);
   const [showComposerActions, setShowComposerActions] = useState(false);
+  const [sending, setSending] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  const conversation = conversations.find((item) => item.id === selectedId) ?? conversations[0];
+  const conversation = conversations.find((item) => item.id === selectedId);
   const messages = store.messages.filter((item) => item.conversationId === selectedId);
   const conversationOffers = store.availabilityOffers
     .filter((item) => item.conversationId === selectedId)
@@ -64,7 +72,12 @@ export default function ChatScreen() {
     ))
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
   const nearestTraining = [...store.trainings]
-    .filter((item) => item.role === 'player' && new Date(item.start).getTime() + item.durationMinutes * 60_000 >= store.now)
+    .filter((item) => (
+      item.role !== 'staff'
+      && !item.status.startsWith('cancelled')
+      && item.status !== 'no_show'
+      && new Date(item.end).getTime() >= store.now
+    ))
     .sort((a, b) => a.start.localeCompare(b.start))[0];
 
   useFocusEffect(useCallback(() => {
@@ -81,9 +94,9 @@ export default function ChatScreen() {
   )).length;
 
   useEffect(() => {
-    if (!store.hydrated || showList || (!openConversationUnread && !openConversationUnreadOffers)) return;
-    store.markConversationRead(selectedId);
-  }, [openConversationUnread, openConversationUnreadOffers, selectedId, showList, store]);
+    if (!store.hydrated || !selectedId || showList || (!openConversationUnread && !openConversationUnreadOffers)) return;
+    void markConversationRead(selectedId);
+  }, [markConversationRead, openConversationUnread, openConversationUnreadOffers, selectedId, showList, store.hydrated]);
 
   useEffect(() => {
     if (Platform.OS !== 'android' || showList) return;
@@ -147,7 +160,7 @@ export default function ChatScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Nowy termin od ${matchedTrainer?.name ?? 'trenera'}, ${offerTimeLabel(matchedUnreadOffer)}`}
               onPress={() => {
-                store.markConversationRead(matchedUnreadOffer.conversationId);
+                void store.markConversationRead(matchedUnreadOffer.conversationId);
                 setSelectedId(matchedUnreadOffer.conversationId);
                 setShowList(false);
               }}
@@ -170,7 +183,7 @@ export default function ChatScreen() {
                 onPress={() => {
                   selectionHaptic();
                   setSelectedId(item.id);
-                  store.markConversationRead(item.id);
+                  void store.markConversationRead(item.id);
                   setShowList(false);
                 }}
                 android_ripple={{ color: theme.colors.pressed }}
@@ -189,18 +202,48 @@ export default function ChatScreen() {
               {index < filtered.length - 1 ? <View style={styles.divider} /> : null}
             </View>
           ))}
+          {!filtered.length ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="chatbubbles-outline" size={34} color={theme.colors.tertiaryText} />
+              <Text style={styles.emptyTitle}>{query ? 'Brak pasujących rozmów' : 'Nie masz jeszcze rozmów'}</Text>
+              <Text style={styles.emptyText}>{query ? 'Zmień wyszukiwaną frazę.' : 'Rozmowa treningowa pojawi się automatycznie po utworzeniu rezerwacji.'}</Text>
+              {!query ? <AppButton title="Umów trening" variant="secondary" onPress={() => router.push('/booking')} /> : null}
+            </View>
+          ) : null}
         </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (!conversation) {
+    return (
+      <SafeAreaView testID="chat-screen-hydrated" style={styles.page} edges={['top', 'left', 'right']}>
+        <View style={styles.emptyState}>
+          <Ionicons name="chatbubble-ellipses-outline" size={34} color={theme.colors.tertiaryText} />
+          <Text style={styles.emptyTitle}>Rozmowa jest niedostępna</Text>
+          <Text style={styles.emptyText}>{store.error ?? 'Wróć do listy i wybierz inną rozmowę.'}</Text>
+          <AppButton title="Wszystkie rozmowy" variant="secondary" onPress={() => {
+            if (conversationId) router.replace('/chat');
+            setShowList(true);
+          }} />
+        </View>
       </SafeAreaView>
     );
   }
 
   const training = store.trainings.find((item) => item.id === conversation.trainingId);
 
-  const send = () => {
+  const send = async () => {
     const body = draft.trim();
-    if (!body) return;
+    if (!body || sending) return;
     selectionHaptic();
-    store.sendMessage(selectedId, body);
+    setSending(true);
+    const sent = await store.sendMessage(selectedId, body);
+    setSending(false);
+    if (!sent) {
+      Alert.alert('Nie udało się wysłać wiadomości', store.error ?? 'Spróbuj ponownie.');
+      return;
+    }
     setDraft('');
     setComposerHeight(38);
   };
@@ -346,9 +389,11 @@ export default function ChatScreen() {
               style={[styles.composerInput, { height: composerHeight }]}
             />
             <Pressable
-              disabled={!draft.trim()}
-              onPress={send}
-              style={[styles.sendButton, !draft.trim() && { opacity: 0.35 }]}>
+              accessibilityLabel="Wyślij wiadomość"
+              accessibilityRole="button"
+              disabled={!draft.trim() || sending}
+              onPress={() => { void send(); }}
+              style={[styles.sendButton, (!draft.trim() || sending) && { opacity: 0.35 }]}>
               <Ionicons name={Platform.OS === 'ios' ? 'arrow-up' : 'send'} size={18} color={theme.colors.onAccent} />
             </Pressable>
           </View>
@@ -403,7 +448,7 @@ function AvailabilityOfferCard({ offer, referenceTime }: { offer: AvailabilityOf
             <Text style={styles.offerLabel}>CENA</Text>
             <Text style={styles.offerPrice}>{offer.price} zł</Text>
           </View>
-          <Text style={styles.offerPackage}>lub {offer.packageHours} godz. z pakietu</Text>
+          <Text style={styles.offerPackage}>Rozliczenie poza aplikacją</Text>
         </View>
         <View style={styles.offerStatusRow}>
           <Ionicons
@@ -494,6 +539,9 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   search: { marginHorizontal: 16, height: 46, borderRadius: 15, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: theme.colors.surfaceElevated },
   searchInput: { flex: 1, color: theme.colors.text, fontSize: 16 },
   listContent: { padding: 16, gap: 8, paddingBottom: 42 },
+  emptyState: { flex: 1, minHeight: 260, paddingHorizontal: 28, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  emptyTitle: { color: theme.colors.text, fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  emptyText: { color: theme.colors.secondaryText, fontSize: 13, lineHeight: 19, textAlign: 'center', maxWidth: 340 },
   pushPreview: { minHeight: 82, padding: 13, marginBottom: 8, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: theme.colors.accentSoft, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.accentBorder },
   pushIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.lime },
   pushEyebrow: { color: theme.colors.accentText, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.7 },

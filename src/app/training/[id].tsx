@@ -21,6 +21,7 @@ function TrainingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const store = useAppStore();
   const clientReady = useClientReady();
+  const [busyAction, setBusyAction] = React.useState<'cancel' | 'payment' | null>(null);
   if (!clientReady || !store.hydrated) return <LoadingScreen />;
   const training = store.trainings.find((item) => item.id === id);
 
@@ -36,6 +37,27 @@ function TrainingDetailScreen() {
     );
   }
 
+  const statusLabel = training.status === 'confirmed'
+    ? 'Potwierdzony'
+    : training.status === 'completed'
+      ? 'Zakończony'
+      : training.status === 'cancelled_by_customer'
+        ? 'Odwołany przez użytkownika'
+        : training.status === 'cancelled_by_provider'
+          ? 'Odwołany przez trenera'
+          : training.status === 'no_show'
+            ? 'Nieobecność'
+            : 'Oczekuje na potwierdzenie';
+  const paymentLabel = training.paymentStatus === 'paid'
+    ? 'Opłacony'
+    : training.paymentStatus === 'not_required'
+      ? 'Nie wymaga rozliczenia'
+      : 'Nieopłacony';
+  const trainingClub = store.clubs.find((club) => club.databaseId === training.venueId);
+  const canEdit = training.canManageBooking
+    && !training.status.startsWith('cancelled')
+    && !['completed', 'no_show'].includes(training.status);
+
   const cancel = () => Alert.alert(
     'Odwołać trening?',
     'Trener i pozostali uczestnicy dostaną powiadomienie.',
@@ -45,12 +67,31 @@ function TrainingDetailScreen() {
         text: 'Odwołaj',
         style: 'destructive',
         onPress: () => {
-          store.cancelTraining(training.id);
-          router.back();
+          void (async () => {
+            setBusyAction('cancel');
+            const cancelled = await store.cancelTraining(training.id, 'Odwołano w aplikacji.');
+            setBusyAction(null);
+            if (cancelled) router.back();
+            else Alert.alert('Nie udało się odwołać treningu', store.error ?? 'Spróbuj ponownie.');
+          })();
         },
       },
     ],
   );
+
+  const updatePayment = async () => {
+    const nextStatus = training.paymentStatus === 'paid' ? 'unpaid' : 'paid';
+    setBusyAction('payment');
+    const updated = await store.markTrainingPayment(
+      training.id,
+      nextStatus,
+      nextStatus === 'paid' ? 'Rozliczenie potwierdzone poza aplikacją.' : 'Cofnięto potwierdzenie rozliczenia.',
+    );
+    setBusyAction(null);
+    if (!updated) {
+      Alert.alert('Nie udało się zmienić rozliczenia', store.error ?? 'Sprawdź uprawnienia i spróbuj ponownie.');
+    }
+  };
 
   return (
     <View style={styles.page}>
@@ -59,7 +100,7 @@ function TrainingDetailScreen() {
         <ImageBackground source={blueCourt} style={styles.hero} resizeMode="cover">
           <LinearGradient colors={['rgba(4,8,9,0.08)', 'rgba(11,15,15,0.34)', 'rgba(11,15,15,0.94)']} style={StyleSheet.absoluteFill} />
           <View style={styles.heroBody}>
-            <View style={styles.confirmed}><Ionicons name="checkmark-circle" size={14} color={theme.colors.lime} /><Text style={styles.confirmedText}>Potwierdzony · {formatDate(training.start)}</Text></View>
+            <View style={styles.confirmed}><Ionicons name="checkmark-circle" size={14} color={theme.colors.lime} /><Text style={styles.confirmedText}>{statusLabel} · {formatDate(training.start)}</Text></View>
             <Text style={styles.heroTitle}>{training.title}</Text>
             <Text style={styles.heroTime}>{formatTime(training.start)}–{endTime(training)} · {training.durationMinutes} min</Text>
             <Text style={styles.heroVenue}>{training.venue} · {training.court}</Text>
@@ -76,29 +117,38 @@ function TrainingDetailScreen() {
           </View>
 
           <View style={styles.actions}>
-            <TrainingAction title="Przełóż" icon="swap-horizontal" onPress={() => {
+            <TrainingAction title="Przełóż" icon="swap-horizontal" disabled={!canEdit || Boolean(busyAction)} onPress={() => {
               router.replace({ pathname: '/booking', params: { id: training.id } });
             }} />
             <View style={styles.actionDivider} />
-            <TrainingAction title="Napisz na czacie" icon="chatbubble-outline" onPress={() => router.replace('/chat')} />
+            <TrainingAction title="Napisz na czacie" icon="chatbubble-outline" onPress={() => (
+              training.conversationId
+                ? router.replace({ pathname: '/chat', params: { conversationId: training.conversationId } })
+                : router.replace('/chat')
+            )} />
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Miejsce</Text>
             <View>
-              <InfoRow flat icon="location-outline" title={training.venue} detail={`${training.court} · Warszawa`} onPress={() => undefined} />
+              <InfoRow flat icon="location-outline" title={training.venue} detail={`${training.court} · ${trainingClub?.address || trainingClub?.city || '—'}`} />
               <Divider inset={40} />
-              <InfoRow flat icon="partly-sunny-outline" title="22° · Słonecznie" detail="Wiatr 9 km/h · Kort w dobrym stanie" />
+              <InfoRow flat icon="wallet-outline" title={paymentLabel} detail="Trening rozliczany poza aplikacją" />
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Uczestnicy</Text>
             <View>
-              {training.participants.length ? training.participants.map((participant, index) => (
-                <View key={`${participant}-${index}`}>
-                  <InfoRow flat icon={index === 0 ? 'person-circle-outline' : 'person-outline'} title={participant} detail={index === 0 ? 'Trener · potwierdzono' : 'Uczestnik · potwierdzono'} />
-                  {index < training.participants.length - 1 ? <Divider inset={40} /> : null}
+              {training.participantDetails.length ? training.participantDetails.map((participant, index) => (
+                <View key={participant.id}>
+                  <InfoRow
+                    flat
+                    icon={participant.role === 'coach' ? 'school-outline' : participant.role === 'organizer' ? 'person-circle-outline' : 'person-outline'}
+                    title={participant.displayName}
+                    detail={`${participant.role === 'coach' ? 'Trener' : participant.role === 'organizer' ? 'Organizator' : 'Uczestnik'} · ${participant.responseStatus === 'accepted' ? 'potwierdzono' : participant.responseStatus === 'declined' ? 'odrzucono' : 'oczekuje'}`}
+                  />
+                  {index < training.participantDetails.length - 1 ? <Divider inset={40} /> : null}
                 </View>
               )) : <InfoRow flat icon="person-outline" title="Gra indywidualna" detail="Bez dodatkowych uczestników" />}
             </View>
@@ -115,7 +165,20 @@ function TrainingDetailScreen() {
             </View>
           </View>
 
-          <AppButton title="Odwołaj trening" variant="danger" onPress={cancel} />
+          {training.canManagePayment ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Rozliczenie poza aplikacją</Text>
+              <Text style={styles.paymentHelp}>Trener lub obsługa klubu oznacza tutaj, czy płatność została rozliczona bezpośrednio.</Text>
+              <AppButton
+                title={busyAction === 'payment' ? 'Zapisywanie…' : training.paymentStatus === 'paid' ? 'Oznacz jako nieopłacony' : 'Oznacz jako opłacony'}
+                variant="secondary"
+                disabled={Boolean(busyAction)}
+                onPress={() => { void updatePayment(); }}
+              />
+            </View>
+          ) : null}
+
+          {canEdit ? <AppButton title={busyAction === 'cancel' ? 'Odwoływanie…' : 'Odwołaj trening'} variant="danger" disabled={Boolean(busyAction)} onPress={cancel} /> : null}
         </View>
       </ScrollView>
     </View>
@@ -125,20 +188,23 @@ function TrainingDetailScreen() {
 function TrainingAction({
   title,
   icon,
+  disabled,
   onPress,
 }: {
   title: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
+  disabled?: boolean;
   onPress: () => void;
 }) {
   const { styles, theme } = useStyles();
   return (
     <Pressable
+      disabled={disabled}
       onPress={() => {
         selectionHaptic();
         onPress();
       }}
-      style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}>
+      style={({ pressed }) => [styles.action, disabled && styles.actionDisabled, pressed && !disabled && styles.actionPressed]}>
       <Ionicons name={icon} size={18} color={theme.colors.secondaryText} />
       <Text style={styles.actionText}>{title}</Text>
     </Pressable>
@@ -180,12 +246,14 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   actionDivider: { width: StyleSheet.hairlineWidth, backgroundColor: theme.colors.divider, marginVertical: 12 },
   actionText: { color: theme.colors.text, fontSize: 13.5, fontWeight: '600' },
   actionPressed: { opacity: 0.55 },
+  actionDisabled: { opacity: 0.35 },
   section: { gap: 8 },
   sectionTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '600', marginLeft: 2 },
   noteRow: { paddingHorizontal: 2, paddingVertical: 10, flexDirection: 'row', alignItems: 'flex-start', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.divider },
   noteIcon: { width: 32, alignItems: 'center', justifyContent: 'center', paddingTop: 1 },
   noteLabel: { color: theme.colors.secondaryText, fontSize: 10, fontWeight: '500' },
   noteText: { color: theme.colors.text, fontSize: 14, lineHeight: 20, marginTop: 6 },
+  paymentHelp: { color: theme.colors.secondaryText, fontSize: 12.5, lineHeight: 18, marginBottom: 3 },
   missing: { flex: 1, padding: 30, alignItems: 'center', justifyContent: 'center', gap: 14 },
   missingTitle: { color: theme.colors.text, fontSize: 19, fontWeight: '700' },
 });

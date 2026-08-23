@@ -211,15 +211,24 @@ function TrainingDashboard() {
   const { styles, theme } = useStyles();
   const router = useRouter();
   const responsive = useResponsiveLayout();
-  const { trainings, packages, selectedSport, trainingNote } = useAppStore();
+  const { trainings, packages, selectedSport } = useAppStore();
   const [selectedDay, setSelectedDay] = useState(0);
   const [referenceTime] = useState(() => new Date().getTime());
-  const futureTrainings = useMemo(
-    () => trainings.filter((item) => item.role === 'player' && new Date(item.start).getTime() >= referenceTime - item.durationMinutes * 60_000)
-      .sort((a, b) => a.start.localeCompare(b.start)),
-    [referenceTime, trainings],
+  const ownTrainings = useMemo(
+    () => trainings.filter((item) => (
+      item.role !== 'staff'
+      && !item.status.startsWith('cancelled')
+      && item.status !== 'no_show'
+    )),
+    [trainings],
   );
-  const next = futureTrainings[0] ?? trainings[0];
+  const futureTrainings = useMemo(
+    () => ownTrainings.filter((item) => new Date(item.end).getTime() >= referenceTime)
+      .sort((a, b) => a.start.localeCompare(b.start)),
+    [ownTrainings, referenceTime],
+  );
+  const hasUpcomingTraining = futureTrainings.length > 0;
+  const next = futureTrainings[0] ?? [...ownTrainings].sort((a, b) => b.end.localeCompare(a.end))[0];
   const heroHeight = responsive.isPhone ? Math.min(Math.max(responsive.width * 0.86, 320), 368) : responsive.isDesktop ? 430 : 390;
   const heroMotion = useHeroParallax();
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
@@ -228,7 +237,30 @@ function TrainingDashboard() {
     date.setDate(date.getDate() + index);
     return date;
   }), []);
-  const selectedTrainings = trainings.filter((item) => sameDay(new Date(item.start), days[selectedDay]));
+  const selectedTrainings = ownTrainings.filter((item) => sameDay(new Date(item.start), days[selectedDay]));
+  const completedTrainings = ownTrainings.filter((training) => (
+    training.status === 'completed'
+    || (
+      training.status === 'confirmed'
+      && new Date(training.end).getTime() < referenceTime
+    )
+  ));
+  const totalMinutes = completedTrainings.reduce((sum, training) => sum + training.durationMinutes, 0);
+  const completedVenues = new Set(completedTrainings.map((training) => training.venueId)).size;
+  const weeklyCounts = Array.from({ length: 13 }, (_, index) => {
+    const end = referenceTime - (12 - index) * 7 * 86_400_000;
+    const start = end - 7 * 86_400_000;
+    return completedTrainings.filter((training) => {
+      const timestamp = new Date(training.start).getTime();
+      return timestamp >= start && timestamp < end;
+    }).length;
+  });
+  const maxWeeklyCount = Math.max(1, ...weeklyCounts);
+  const paymentLabel = next.paymentStatus === 'paid'
+    ? 'Opłacony'
+    : next.paymentStatus === 'not_required'
+      ? 'Bez rozliczenia'
+      : 'Nieopłacony';
 
   const openTraining = (training: Training) => {
     selectionHaptic();
@@ -251,7 +283,7 @@ function TrainingDashboard() {
             style={StyleSheet.absoluteFill}
           />
           <AnimatedSafeAreaView edges={['top']} style={[styles.heroContent, heroMotion.contentStyle]}>
-            <Text style={styles.heroEyebrow}>Następny trening</Text>
+            <Text style={styles.heroEyebrow}>{hasUpcomingTraining ? 'Następny trening' : 'Ostatni trening'}</Text>
             <Text style={styles.heroTime}>{formatTime(next.start)}</Text>
             <Text style={styles.heroTitle}>{next.title}</Text>
             <Text style={styles.heroMeta}>{dayLabel(new Date(next.start))}  ·  {next.venue}  ·  {next.court}</Text>
@@ -268,7 +300,7 @@ function TrainingDashboard() {
           <View style={styles.verticalDivider} />
           <HeroFact icon="person" label="Trener" value={next.trainer.split(' ')[0]} />
           <View style={styles.verticalDivider} />
-          <HeroFact icon="partly-sunny" label="Warunki" value="22° · Dobre" />
+          <HeroFact icon="wallet-outline" label="Rozliczenie" value={paymentLabel} />
         </View>
 
         <View style={[styles.quickGrid, !responsive.isPhone && styles.quickGridExpanded]}>
@@ -280,8 +312,8 @@ function TrainingDashboard() {
           <View style={styles.noteCard}>
             <View style={styles.noteIcon}><Ionicons name="reader-outline" size={18} color={theme.colors.secondaryText} /></View>
             <View style={styles.flex}>
-              <Text style={styles.cardEyebrow}>Notatka na następny trening</Text>
-              <Text style={styles.noteText}>{trainingNote}</Text>
+              <Text style={styles.cardEyebrow}>Notatka do treningu</Text>
+              <Text style={styles.noteText}>{next.notes || 'Brak notatki do tego treningu'}</Text>
               <Text style={styles.noteMeta}>{dayLabel(new Date(next.start))} · {formatTime(next.start)}–{endTime(next)}</Text>
             </View>
             <Ionicons name="chevron-forward" size={17} color={theme.colors.tertiaryText} />
@@ -300,7 +332,7 @@ function TrainingDashboard() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.daysRow}>
             {days.map((date, index) => {
-              const eventCount = trainings.filter((item) => sameDay(new Date(item.start), date)).length;
+              const eventCount = ownTrainings.filter((item) => sameDay(new Date(item.start), date)).length;
               return (
                 <Pressable key={date.toISOString()} onPress={() => { selectionHaptic(); setSelectedDay(index); }} style={[styles.day, selectedDay === index && styles.daySelected]}>
                   <Text style={[styles.dayWeek, selectedDay === index && styles.dayTextSelected]}>{new Intl.DateTimeFormat('pl-PL', { weekday: 'short' }).format(date).replace('.', '')}</Text>
@@ -330,18 +362,22 @@ function TrainingDashboard() {
           </View>
         </View>
 
-        <SectionTitle title="Aktywne pakiety" action={<Text style={styles.sectionMeta}>{packages.length} aktywne</Text>} />
-        <View style={[styles.packageGrid, responsive.isCompact && styles.packageGridCompact]}>
-          {packages.map((item) => (
-            <PackageColumn
-              key={item.id}
-              item={item}
-              onDetails={() => router.push({ pathname: '/package/[id]', params: { id: item.id } })}
-              onTopUp={() => router.push({ pathname: '/top-up/[id]', params: { id: item.id } })}
-              onDiscover={() => router.push(item.scope === 'trainer' ? '/trainers' : '/clubs')}
-            />
-          ))}
-        </View>
+        {packages.length ? (
+          <>
+            <SectionTitle title="Aktywne pakiety" action={<Text style={styles.sectionMeta}>{packages.length} aktywne</Text>} />
+            <View style={[styles.packageGrid, responsive.isCompact && styles.packageGridCompact]}>
+              {packages.map((item) => (
+                <PackageColumn
+                  key={item.id}
+                  item={item}
+                  onDetails={() => router.push({ pathname: '/package/[id]', params: { id: item.id } })}
+                  onTopUp={() => router.push({ pathname: '/top-up/[id]', params: { id: item.id } })}
+                  onDiscover={() => router.push(item.scope === 'trainer' ? '/trainers' : '/clubs')}
+                />
+              ))}
+            </View>
+          </>
+        ) : null}
 
         <View style={styles.statsCard}>
           <View style={styles.statsHeader}>
@@ -349,17 +385,17 @@ function TrainingDashboard() {
               <Text style={styles.sectionCardTitle}>Statystyki</Text>
               <Text style={styles.calendarHint}>Ostatnie 13 tygodni</Text>
             </View>
-            <Pill label="+18%" active />
+            <Pill label="Dane z treningów" active />
           </View>
           <View style={styles.chart}>
-            {[18, 30, 46, 35, 24, 42, 60, 34, 52, 46, 69, 57, 78].map((height, index) => (
-              <View key={index} style={[styles.chartBar, { height }]} />
+            {weeklyCounts.map((count, index) => (
+              <View key={index} style={[styles.chartBar, { height: Math.max(3, Math.round((count / maxWeeklyCount) * 78)) }]} />
             ))}
           </View>
           <View style={styles.metrics}>
-            <Metric value="65" label="treningów" />
-            <Metric value="45" label="spotkań" />
-            <Metric value="450" label="minut" />
+            <Metric value={String(completedTrainings.length)} label="treningów" />
+            <Metric value={String(completedVenues)} label="obiektów" />
+            <Metric value={totalMinutes.toLocaleString('pl-PL')} label="minut" />
           </View>
         </View>
 

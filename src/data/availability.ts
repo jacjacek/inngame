@@ -41,6 +41,7 @@ export type AvailabilityOffer = {
   packageHours: number;
   sentAt: string;
   status: AvailabilityOfferStatus;
+  expiresAt?: string;
   readAt?: string;
   reservedTrainingId?: string;
 };
@@ -104,116 +105,6 @@ export function usableAvailabilityRanges(preference: AvailabilityPreference, day
   return validAvailabilityRanges(preference, day).filter((range) => !overlapping.has(range.id));
 }
 
-function emptyWeek(): Record<WeekdayKey, DayPartKey[]> {
-  return {
-    monday: [],
-    tuesday: [],
-    wednesday: [],
-    thursday: [],
-    friday: [],
-    saturday: [],
-    sunday: [],
-  };
-}
-
-function makePreference(dayParts: Partial<Record<WeekdayKey, DayPartKey[]>>): AvailabilityPreference {
-  return {
-    enabled: true,
-    dayParts: { ...emptyWeek(), ...dayParts },
-    leadTime: 'threeDays',
-    keepAllInChat: true,
-    preciseHoursEnabled: false,
-    preciseHours: {},
-  };
-}
-
-export function createDefaultAvailabilityPreferences(): Record<string, AvailabilityPreference> {
-  return {
-    'bartek-nowak': makePreference({
-      tuesday: ['evening'],
-      thursday: ['evening'],
-      saturday: ['morning'],
-    }),
-    'anna-kowalska': makePreference({
-      monday: ['evening'],
-      wednesday: ['evening'],
-      sunday: ['morning'],
-    }),
-    'michal-zielinski': {
-      ...makePreference({ tuesday: ['evening'], friday: ['evening'] }),
-      enabled: false,
-    },
-  };
-}
-
-function nextMatchingDate() {
-  const preferred: Partial<Record<WeekdayKey, number>> = {
-    tuesday: 18,
-    thursday: 17,
-    saturday: 9,
-  };
-  const now = new Date();
-  for (let offset = 1; offset <= 7; offset += 1) {
-    const candidate = new Date(now);
-    candidate.setDate(now.getDate() + offset);
-    const weekday = jsDayToWeekday[candidate.getDay()];
-    const hour = preferred[weekday];
-    if (hour !== undefined) {
-      candidate.setHours(hour, 0, 0, 0);
-      return candidate;
-    }
-  }
-  const fallback = new Date(now);
-  fallback.setDate(now.getDate() + 1);
-  fallback.setHours(17, 0, 0, 0);
-  return fallback;
-}
-
-export function createSampleAvailabilityOffers(): AvailabilityOffer[] {
-  const start = nextMatchingDate();
-  return [{
-    id: `bartek-last-minute-slot-${start.toISOString().slice(0, 10)}`,
-    trainerId: 'bartek-nowak',
-    conversationId: 'bartek',
-    start: start.toISOString(),
-    durationMinutes: 60,
-    venue: 'Korty Deski',
-    court: 'Kort 2',
-    price: 240,
-    packageHours: 1,
-    sentAt: new Date().toISOString(),
-    status: 'available',
-  }];
-}
-
-export function mergeAvailabilityPreferences(
-  stored: Record<string, AvailabilityPreference> | undefined,
-): Record<string, AvailabilityPreference> {
-  const defaults = createDefaultAvailabilityPreferences();
-  if (!stored) return defaults;
-  return Object.fromEntries(Object.entries(defaults).map(([trainerId, fallback]) => {
-    const value = stored[trainerId];
-    if (!value) return [trainerId, fallback];
-    return [trainerId, {
-      ...fallback,
-      ...value,
-      dayParts: { ...fallback.dayParts, ...value.dayParts },
-      preciseHours: { ...fallback.preciseHours, ...value.preciseHours },
-    }];
-  }));
-}
-
-export function restoreAvailabilityOffers(stored: AvailabilityOffer[] | undefined) {
-  if (!stored?.length) return createSampleAvailabilityOffers();
-  const now = Date.now();
-  const restored = expireAvailabilityOffers(stored, now);
-  if (restored.some((offer) => isOfferAvailable(offer, now))) {
-    return restored;
-  }
-  const nextOffer = createSampleAvailabilityOffers()[0];
-  return restored.some((offer) => offer.id === nextOffer.id) ? restored : [...restored, nextOffer];
-}
-
 export function expireAvailabilityOffers(offers: AvailabilityOffer[], referenceTime = Date.now()) {
   let changed = false;
   const expired = offers.map((offer) => {
@@ -251,7 +142,9 @@ export function offerTimeLabel(offer: AvailabilityOffer) {
 }
 
 export function isOfferAvailable(offer: AvailabilityOffer, referenceTime = Date.now()) {
-  return offer.status === 'available' && new Date(offer.start).getTime() > referenceTime;
+  return offer.status === 'available'
+    && new Date(offer.start).getTime() > referenceTime
+    && (!offer.expiresAt || new Date(offer.expiresAt).getTime() > referenceTime);
 }
 
 export function doesOfferMatchPreference(

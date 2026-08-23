@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton, Field, ModalHeader, Pill, successHaptic, withSheetPage } from '@/components/ui';
@@ -12,7 +12,11 @@ function useStyles() {
   return useThemeStyles(createStyles);
 }
 
-const levels = ['Początkujący', 'Średnio zaawansowany', 'Zaawansowany'];
+const levels = [
+  { code: '1.0', label: 'Początkujący' },
+  { code: '3.0', label: 'Średnio zaawansowany' },
+  { code: '4.0', label: 'Zaawansowany' },
+];
 
 function ProfileFormScreen() {
   const { styles, theme } = useStyles();
@@ -20,12 +24,24 @@ function ProfileFormScreen() {
   const store = useAppStore();
   const [name, setName] = useState(store.profile.name);
   const [city, setCity] = useState(store.profile.city || 'Warszawa');
-  const [playingLevel, setPlayingLevel] = useState(store.profile.playingLevel || levels[1]);
+  const [playingLevel, setPlayingLevel] = useState(store.tennisLevel || levels[1].code);
+  const [saving, setSaving] = useState(false);
   const valid = name.trim().length >= 2 && city.trim().length >= 2;
 
-  const save = () => {
-    if (!valid) return;
-    store.saveProfile({ name: name.trim(), city: city.trim(), playingLevel });
+  const save = async () => {
+    if (!valid || saving) return;
+    setSaving(true);
+    const saved = await store.saveProfile({
+      ...store.profile,
+      name: name.trim(),
+      city: city.trim(),
+      playingLevel,
+    });
+    setSaving(false);
+    if (!saved) {
+      Alert.alert('Nie udało się zapisać profilu', store.error ?? 'Spróbuj ponownie.');
+      return;
+    }
     successHaptic();
     router.back();
   };
@@ -45,12 +61,12 @@ function ProfileFormScreen() {
             <Field label="Miasto" value={city} onChangeText={setCity} placeholder="np. Warszawa" autoCapitalize="words" />
             <View style={styles.level}>
               <Text style={styles.label}>Poziom gry</Text>
-              <View style={styles.levels}>{levels.map((item) => <Pill key={item} label={item} active={playingLevel === item} onPress={() => setPlayingLevel(item)} />)}</View>
+              <View style={styles.levels}>{levels.map((item) => <Pill key={item.code} label={item.label} active={playingLevel === item.code} onPress={() => setPlayingLevel(item.code)} />)}</View>
             </View>
           </View>
           <View style={styles.privacy}><Ionicons name="lock-closed-outline" size={15} color={theme.colors.secondaryText} /><Text style={styles.privacyText}>Dane profilu służą wyłącznie do dopasowania usług MyMovio.</Text></View>
         </ScrollView>
-        <SafeAreaView edges={['bottom']} style={styles.bottom}><AppButton title="Zapisz profil" disabled={!valid} onPress={save} /></SafeAreaView>
+        <SafeAreaView edges={['bottom']} style={styles.bottom}><AppButton title={saving ? 'Zapisywanie…' : 'Zapisz profil'} disabled={!valid || saving} onPress={() => { void save(); }} /></SafeAreaView>
       </KeyboardAvoidingView>
     </View>
   );

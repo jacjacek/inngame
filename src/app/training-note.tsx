@@ -1,10 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppButton, Field, ModalHeader, withSheetPage } from '@/components/ui';
+import { AppButton, Field, formatDate, ModalHeader, withSheetPage } from '@/components/ui';
 import { useResponsiveLayout } from '@/responsive';
 import { useAppStore } from '@/state/app-store';
 import { AppTheme, useThemeStyles } from '@/theme';
@@ -17,13 +17,31 @@ function TrainingNoteScreen() {
   const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
-  const [note, setNote] = useState(store.trainingNote);
+  const [saving, setSaving] = useState(false);
   const { gutter, height, isDesktop, isPhone } = useResponsiveLayout();
   const compactHeight = height < 680;
   const centerContent = !isPhone && !compactHeight;
+  const lastTraining = [...store.trainings]
+    .filter((training) => (
+      training.role !== 'staff'
+      && !training.status.startsWith('cancelled')
+      && training.status !== 'no_show'
+      && (training.status === 'completed' || (
+        training.status === 'confirmed' && new Date(training.end).getTime() <= store.now
+      ))
+    ))
+    .sort((left, right) => right.end.localeCompare(left.end))[0];
+  const [note, setNote] = useState(lastTraining?.notes ?? '');
 
-  const save = () => {
-    store.setTrainingNote(note.trim());
+  const save = async () => {
+    if (!lastTraining || saving) return;
+    setSaving(true);
+    const saved = await store.setTrainingNote(lastTraining.id, note.trim());
+    setSaving(false);
+    if (!saved) {
+      Alert.alert('Nie udało się zapisać notatki', store.error ?? 'Spróbuj ponownie.');
+      return;
+    }
     router.back();
   };
 
@@ -41,10 +59,24 @@ function TrainingNoteScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <View style={styles.inner}>
-            <View style={styles.training}>
-              <View style={styles.icon}><Ionicons name="tennisball" size={20} color={theme.colors.secondaryText} /></View>
-              <View style={styles.trainingCopy}><Text style={styles.eyebrow}>Ostatni trening</Text><Text style={styles.title} numberOfLines={2}>Korty Deski · Bartek Nowak</Text><Text style={styles.meta}>17 lipca · 120 min</Text></View>
-            </View>
+            {lastTraining ? (
+              <View style={styles.training}>
+                <View style={styles.icon}><Ionicons name="tennisball" size={20} color={theme.colors.secondaryText} /></View>
+                <View style={styles.trainingCopy}>
+                  <Text style={styles.eyebrow}>Ostatni trening</Text>
+                  <Text style={styles.title} numberOfLines={2}>{lastTraining.venue} · {lastTraining.trainer}</Text>
+                  <Text style={styles.meta}>{formatDate(lastTraining.start)} · {lastTraining.durationMinutes} min</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.training}>
+                <View style={styles.icon}><Ionicons name="time-outline" size={20} color={theme.colors.secondaryText} /></View>
+                <View style={styles.trainingCopy}>
+                  <Text style={styles.title}>Brak zakończonego treningu</Text>
+                  <Text style={styles.meta}>Notatkę dodasz po pierwszym zakończonym spotkaniu.</Text>
+                </View>
+              </View>
+            )}
             <Field
               label="Notatka dla Ciebie i trenera"
               accessibilityLabel="Notatka dla Ciebie i trenera"
@@ -63,7 +95,7 @@ function TrainingNoteScreen() {
           </View>
         </ScrollView>
         <SafeAreaView edges={['bottom']} style={[styles.bottom, { paddingHorizontal: gutter }]}>
-          <View style={styles.bottomInner}><AppButton title="Zapisz notatkę" onPress={save} /></View>
+          <View style={styles.bottomInner}><AppButton title={saving ? 'Zapisywanie…' : 'Zapisz notatkę'} disabled={!lastTraining || saving} onPress={() => { void save(); }} /></View>
         </SafeAreaView>
       </KeyboardAvoidingView>
     </View>

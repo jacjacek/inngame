@@ -1,10 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { Image, Linking, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Linking, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 
 import { preferenceSummary } from '@/data/availability';
-import { trainers } from '@/data/models';
 import { trainerPhotos } from '@/data/trainer-media';
 import { AppButton, Divider, IconButton, InfoRow, LoadingScreen, ModalHeader, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
@@ -20,15 +19,48 @@ function TrainerProfileScreen() {
   const { id, purpose } = useLocalSearchParams<{ id: string; purpose?: string }>();
   const store = useAppStore();
   const clientReady = useClientReady();
-  if (!clientReady || !store.hydrated) return <LoadingScreen />;
-  const trainer = trainers.find((candidate) => candidate.id === id);
-  if (!trainer) return null;
+  if (!clientReady || !store.hydrated || store.loading) return <LoadingScreen />;
+
+  const trainer = store.trainers.find((candidate) => candidate.id === id);
+  if (!trainer) {
+    return (
+      <View style={styles.page}>
+        <ModalHeader title="Profil trenera" />
+        <ProfileState
+          icon={store.error ? 'cloud-offline-outline' : 'person-outline'}
+          title={store.error ? 'Nie udało się pobrać profilu' : 'Ten trener nie jest dostępny'}
+          description={store.error ?? 'Profil mógł zostać wyłączony lub adres jest już nieaktualny.'}
+          action={store.error ? 'Spróbuj ponownie' : 'Wróć do trenerów'}
+          onPress={() => {
+            if (store.error) void store.refresh();
+            else router.replace('/trainers');
+          }}
+        />
+      </View>
+    );
+  }
+
   const selected = store.selectedTrainerId === trainer.id;
   const availabilityPreference = store.availabilityPreferences[trainer.id];
 
-  const choose = () => {
-    store.selectTrainer(trainer.id);
+  const choose = async () => {
+    const saved = await store.selectTrainer(trainer.id);
+    if (!saved) {
+      Alert.alert('Nie udało się wybrać trenera', store.error ?? 'Spróbuj ponownie.');
+      return;
+    }
     router.dismissAll();
+  };
+
+  const openCalendar = async () => {
+    if (!selected) {
+      const saved = await store.selectTrainer(trainer.id);
+      if (!saved) {
+        Alert.alert('Nie udało się otworzyć kalendarza', store.error ?? 'Spróbuj ponownie.');
+        return;
+      }
+    }
+    router.replace('/booking');
   };
 
   return (
@@ -38,6 +70,13 @@ function TrainerProfileScreen() {
         trailing={<IconButton icon="share-outline" accessibilityLabel="Udostępnij profil" onPress={() => Share.share({ message: `${trainer.name} — trener tenisa w MyMovio` })} />}
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {store.error ? (
+          <View style={styles.errorBanner}>
+            <Ionicons name="warning-outline" size={18} color={theme.colors.coral} />
+            <Text style={styles.errorText}>{store.error}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.hero}>
           <View style={styles.avatar}>
             {trainerPhotos[trainer.id]
@@ -69,15 +108,17 @@ function TrainerProfileScreen() {
 
         <View style={styles.alertPreference}>
           <View style={styles.alertIcon}>
-            <Ionicons name="flash-outline" size={19} color={availabilityPreference.enabled ? theme.colors.accentText : theme.colors.secondaryText} />
+            <Ionicons name="flash-outline" size={19} color={availabilityPreference?.enabled ? theme.colors.accentText : theme.colors.secondaryText} />
           </View>
           <View style={styles.flex}>
             <Text style={styles.availabilityLabel}>Powiadomienia o wolnych terminach</Text>
-            <Text numberOfLines={2} style={styles.availabilityValue}>{preferenceSummary(availabilityPreference)}</Text>
+            <Text numberOfLines={2} style={styles.availabilityValue}>
+              {availabilityPreference ? preferenceSummary(availabilityPreference) : 'Brak zapisanych preferencji'}
+            </Text>
           </View>
           <AppButton
             compact
-            title={availabilityPreference.enabled ? 'Edytuj' : 'Włącz'}
+            title={availabilityPreference?.enabled ? 'Edytuj' : 'Włącz'}
             variant="secondary"
             onPress={() => router.push({ pathname: '/availability-preferences', params: { trainerId: trainer.id } })}
           />
@@ -85,7 +126,11 @@ function TrainerProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>O trenerze</Text>
-          <View style={styles.aboutContent}>{trainer.about.map((paragraph) => <Text key={paragraph} style={styles.about}>{paragraph}</Text>)}</View>
+          <View style={styles.aboutContent}>
+            {trainer.about.length
+              ? trainer.about.map((paragraph) => <Text key={paragraph} style={styles.about}>{paragraph}</Text>)
+              : <Text style={styles.about}>Trener nie uzupełnił jeszcze opisu.</Text>}
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -93,20 +138,58 @@ function TrainerProfileScreen() {
           <View>
             <InfoRow flat icon="ribbon-outline" title={trainer.certification} detail="Certyfikacja trenerska" />
             <Divider inset={40} />
-            <InfoRow flat icon="location-outline" title={trainer.clubs.join(', ')} detail="Kluby, w których prowadzi treningi" />
+            <InfoRow flat icon="location-outline" title={trainer.clubs.join(', ') || 'Brak przypisanych klubów'} detail="Kluby, w których prowadzi treningi" />
             <Divider inset={40} />
-            <InfoRow flat icon="call-outline" title={trainer.phone} detail="Telefon kontaktowy" onPress={() => Linking.openURL(`tel:${trainer.phone.replaceAll(' ', '')}`)} />
+            <InfoRow
+              flat
+              icon="call-outline"
+              title={trainer.phone || 'Brak telefonu'}
+              detail="Telefon kontaktowy"
+              onPress={trainer.phone ? () => Linking.openURL(`tel:${trainer.phone.replaceAll(' ', '')}`) : undefined}
+            />
           </View>
         </View>
 
         <View style={styles.buttons}>
-          <AppButton title={selected ? 'Wybrany trener' : purpose === 'onboarding' ? 'Wybierz trenera' : 'Ustaw jako trenera'} icon="checkmark-circle-outline" disabled={selected} onPress={choose} />
-          <AppButton title="Zobacz kalendarz" icon="calendar-outline" variant="secondary" onPress={() => {
-            if (!selected) store.selectTrainer(trainer.id);
-            router.replace('/booking');
-          }} />
+          <AppButton
+            title={selected ? 'Wybrany trener' : store.mutationPending ? 'Zapisywanie…' : purpose === 'onboarding' ? 'Wybierz trenera' : 'Ustaw jako trenera'}
+            icon="checkmark-circle-outline"
+            disabled={selected || store.mutationPending}
+            onPress={() => void choose()}
+          />
+          <AppButton
+            title="Zobacz kalendarz"
+            icon="calendar-outline"
+            variant="secondary"
+            disabled={store.mutationPending}
+            onPress={() => void openCalendar()}
+          />
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+function ProfileState({
+  icon,
+  title,
+  description,
+  action,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  title: string;
+  description: string;
+  action: string;
+  onPress: () => void;
+}) {
+  const { styles, theme } = useStyles();
+  return (
+    <View style={styles.profileState}>
+      <Ionicons name={icon} size={27} color={theme.colors.secondaryText} />
+      <Text style={styles.profileStateTitle}>{title}</Text>
+      <Text style={styles.profileStateDescription}>{description}</Text>
+      <AppButton compact variant="secondary" title={action} onPress={onPress} />
     </View>
   );
 }
@@ -123,6 +206,11 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   flex: { flex: 1 },
 
   content: { padding: 16, gap: 20, paddingBottom: 42 },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 9, padding: 12, borderRadius: 14, backgroundColor: theme.colors.dangerSoft },
+  errorText: { flex: 1, color: theme.colors.danger, fontSize: 12, lineHeight: 17 },
+  profileState: { flex: 1, paddingHorizontal: 30, alignItems: 'center', justifyContent: 'center', gap: 9 },
+  profileStateTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  profileStateDescription: { color: theme.colors.secondaryText, fontSize: 12.5, lineHeight: 18, textAlign: 'center', marginBottom: 6 },
   hero: { alignItems: 'center', paddingVertical: 10 },
   avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: theme.colors.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   avatarImage: { width: '100%', height: '100%', borderRadius: 46 },

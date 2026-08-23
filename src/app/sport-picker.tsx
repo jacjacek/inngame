@@ -1,9 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Divider, ModalHeader, selectionHaptic, withSheetPage } from '@/components/ui';
+import { AppButton, Divider, LoadingScreen, ModalHeader, selectionHaptic, useClientReady, withSheetPage } from '@/components/ui';
 import { useAppStore } from '@/state/app-store';
 import { AppTheme, useThemeStyles } from '@/theme';
 
@@ -15,36 +15,57 @@ function SportPickerScreen() {
   const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
-  const sports = [
-    { name: 'Tenis', icon: 'tennisball' as const, color: theme.colors.accentText },
-    { name: 'Squash', icon: 'fitness' as const, color: theme.colors.coral },
-    { name: 'Padel', icon: 'tennisball-outline' as const, color: theme.colors.sky },
-  ];
+  const clientReady = useClientReady();
+  const [saving, setSaving] = useState<string>();
+  if (!clientReady || !store.hydrated) return <LoadingScreen />;
+
+  const iconForSport = (code: string): React.ComponentProps<typeof Ionicons>['name'] => (
+    code === 'tennis' || code === 'padel' ? 'tennisball' : 'fitness'
+  );
+
+  const selectSport = async (name: string) => {
+    if (saving) return;
+    selectionHaptic();
+    setSaving(name);
+    const saved = await store.setSelectedSport(name);
+    setSaving(undefined);
+    if (!saved) {
+      Alert.alert('Nie udało się zmienić sportu', store.error ?? 'Spróbuj ponownie.');
+      return;
+    }
+    router.back();
+  };
   return (
     <View style={styles.page}>
       <ModalHeader title="Wybierz sport" />
       <View style={styles.content}>
         <Text style={styles.subtitle}>Aktywny sport zmienia treningi, trenerów i statystyki widoczne w aplikacji.</Text>
         <View>
-          {sports.map((sport, index) => {
+          {store.sports.map((sport, index) => {
             const selected = store.selectedSport === sport.name;
+            const color = sport.code === 'tennis' ? theme.colors.accentText : sport.code === 'padel' ? theme.colors.sky : theme.colors.coral;
             return (
-              <View key={sport.name}>
+              <View key={sport.id}>
                 <Pressable
-                  onPress={() => {
-                    selectionHaptic();
-                    store.setSelectedSport(sport.name);
-                    router.back();
-                  }}
+                  disabled={Boolean(saving)}
+                  onPress={() => { void selectSport(sport.name); }}
                   style={styles.row}>
-                  <View style={[styles.icon, { backgroundColor: `${sport.color}20` }]}><Ionicons name={sport.icon} size={22} color={sport.color} /></View>
+                  <View style={[styles.icon, { backgroundColor: `${color}20` }]}><Ionicons name={iconForSport(sport.code)} size={22} color={color} /></View>
                   <Text style={styles.name}>{sport.name}</Text>
-                  {selected ? <Ionicons name="checkmark-circle" size={22} color={theme.colors.accentText} /> : null}
+                  {saving === sport.name ? <Text style={styles.saving}>Zapisywanie…</Text> : selected ? <Ionicons name="checkmark-circle" size={22} color={theme.colors.accentText} /> : null}
                 </Pressable>
-                {index < sports.length - 1 ? <Divider inset={56} /> : null}
+                {index < store.sports.length - 1 ? <Divider inset={56} /> : null}
               </View>
             );
           })}
+          {!store.sports.length ? (
+            <View style={styles.empty}>
+              <Ionicons name="tennisball-outline" size={28} color={theme.colors.tertiaryText} />
+              <Text style={styles.emptyTitle}>Brak aktywnych sportów</Text>
+              <Text style={styles.emptyText}>{store.error ?? 'Katalog dyscyplin nie jest jeszcze skonfigurowany.'}</Text>
+              <AppButton compact title="Odśwież" variant="secondary" onPress={() => { void store.refresh(); }} />
+            </View>
+          ) : null}
         </View>
       </View>
     </View>
@@ -60,4 +81,8 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   row: { minHeight: 72, flexDirection: 'row', gap: 12, alignItems: 'center', paddingHorizontal: 2 },
   icon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   name: { color: theme.colors.text, fontSize: 16, fontWeight: '600', flex: 1 },
+  saving: { color: theme.colors.secondaryText, fontSize: 11 },
+  empty: { minHeight: 220, alignItems: 'center', justifyContent: 'center', gap: 9, paddingHorizontal: 26 },
+  emptyTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '600' },
+  emptyText: { color: theme.colors.secondaryText, fontSize: 12.5, lineHeight: 18, textAlign: 'center' },
 });

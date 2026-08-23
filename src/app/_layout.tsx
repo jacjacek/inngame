@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { AuthGate } from '@/auth/auth-gate';
+import { AuthProvider } from '@/auth/auth-provider';
 import { AppStoreProvider, useAppStore } from '@/state/app-store';
 import { AppThemeProvider, themes } from '@/theme';
 
@@ -32,9 +34,11 @@ const compactSheetOptions = {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AppStoreProvider>
-        <ThemedNavigation />
-      </AppStoreProvider>
+      <AuthProvider>
+        <AppStoreProvider>
+          <ThemedNavigation />
+        </AppStoreProvider>
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 }
@@ -64,26 +68,28 @@ function ThemedNavigation() {
     <AppThemeProvider value={theme}>
       <ThemeProvider value={navigationTheme}>
         <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: theme.colors.background },
-            animation: 'default',
-          }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="booking" options={detailSheetOptions} />
-          <Stack.Screen name="training/[id]" options={detailSheetOptions} />
-          <Stack.Screen name="package/[id]" options={detailSheetOptions} />
-          <Stack.Screen name="top-up/[id]" options={formSheetOptions} />
-          <Stack.Screen name="trainers" options={detailSheetOptions} />
-          <Stack.Screen name="trainer/[id]" options={detailSheetOptions} />
-          <Stack.Screen name="clubs" options={detailSheetOptions} />
-          <Stack.Screen name="profile-form" options={formSheetOptions} />
-          <Stack.Screen name="sport-picker" options={compactSheetOptions} />
-          <Stack.Screen name="tennis-level" options={detailSheetOptions} />
-          <Stack.Screen name="training-note" options={formSheetOptions} />
-          <Stack.Screen name="availability-preferences" options={formSheetOptions} />
-        </Stack>
+        <AuthGate>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: theme.colors.background },
+              animation: 'default',
+            }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="booking" options={detailSheetOptions} />
+            <Stack.Screen name="training/[id]" options={detailSheetOptions} />
+            <Stack.Screen name="package/[id]" options={detailSheetOptions} />
+            <Stack.Screen name="top-up/[id]" options={formSheetOptions} />
+            <Stack.Screen name="trainers" options={detailSheetOptions} />
+            <Stack.Screen name="trainer/[id]" options={detailSheetOptions} />
+            <Stack.Screen name="clubs" options={detailSheetOptions} />
+            <Stack.Screen name="profile-form" options={formSheetOptions} />
+            <Stack.Screen name="sport-picker" options={compactSheetOptions} />
+            <Stack.Screen name="tennis-level" options={detailSheetOptions} />
+            <Stack.Screen name="training-note" options={formSheetOptions} />
+            <Stack.Screen name="availability-preferences" options={formSheetOptions} />
+          </Stack>
+        </AuthGate>
       </ThemeProvider>
     </AppThemeProvider>
   );

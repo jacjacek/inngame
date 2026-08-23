@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useAuth } from '@/auth/auth-provider';
 import { useAppStore } from '@/state/app-store';
 import { AppTheme, ThemeMode, useThemeStyles } from '@/theme';
 import { Divider, InfoRow, LoadingScreen, Screen, SectionTitle, ToggleRow } from '@/components/ui';
@@ -29,10 +30,21 @@ const levelNames: Record<string, string> = {
   '5.0+': 'Wysoki poziom turniejowy',
 };
 
+const roleNames: Record<string, string> = {
+  player: 'Zawodnik',
+  trainer: 'Trener',
+  owner: 'Właściciel klubu',
+  manager: 'Menedżer klubu',
+  reception: 'Recepcja',
+  viewer: 'Podgląd',
+  platform_admin: 'Administrator platformy',
+};
+
 export default function ProfileScreen() {
   const { styles, theme } = useStyles();
   const router = useRouter();
   const store = useAppStore();
+  const { signOut } = useAuth();
   if (!store.hydrated) return <LoadingScreen />;
 
   const initials = store.profile.name
@@ -43,6 +55,32 @@ export default function ProfileScreen() {
     .join('')
     .toUpperCase() || '?';
   const subtitle = `${store.profile.city || 'Brak lokalizacji'} · ${store.profile.playingLevel ? store.profile.playingLevel.toLocaleLowerCase('pl') : 'ustaw poziom gry'}`;
+  const completedTrainings = store.trainings.filter((training) => (
+    training.role !== 'staff'
+    && training.status !== 'no_show'
+    && !training.status.startsWith('cancelled')
+    && (training.status === 'completed'
+    || (
+      training.status === 'confirmed'
+      && new Date(training.end).getTime() < store.now
+    ))
+  ));
+  const totalMinutes = completedTrainings.reduce((sum, training) => sum + training.durationMinutes, 0);
+  const partnerCount = new Set(
+    completedTrainings.flatMap((training) => training.participantDetails)
+      .filter((participant) => participant.userId !== store.currentUserId)
+      .map((participant) => participant.userId ?? participant.displayName),
+  ).size;
+  const venueCount = new Set(completedTrainings.map((training) => training.venueId)).size;
+  const weeklyTrainingCounts = Array.from({ length: 13 }, (_, index) => {
+    const end = store.now - (12 - index) * 7 * 24 * 60 * 60 * 1000;
+    const start = end - 7 * 24 * 60 * 60 * 1000;
+    return completedTrainings.filter((training) => {
+      const timestamp = new Date(training.start).getTime();
+      return timestamp >= start && timestamp < end;
+    }).length;
+  });
+  const maxWeeklyCount = Math.max(1, ...weeklyTrainingCounts);
 
   return (
     <Screen testID="profile-hydrated" contentStyle={styles.content}>
@@ -113,8 +151,8 @@ export default function ProfileScreen() {
           <Divider inset={0} />
           <ToggleRow
             flat
-            title="Rozliczenia"
-            subtitle="Płatności i zaległości"
+            title="Status rozliczenia treningu"
+            subtitle="Oznaczenie opłacone lub nieopłacone"
             value={store.notifications.payments}
             onValueChange={(value) => store.setNotification('payments', value)}
           />
@@ -135,9 +173,36 @@ export default function ProfileScreen() {
           action={<Pressable onPress={() => router.push('/sport-picker')} hitSlop={10}><Text style={styles.editText}>Dodaj</Text></Pressable>}
         />
         <View>
-          <InfoRow flat icon="tennisball" title="Tenis" detail="Główny" />
-          <Divider inset={40} />
-          <InfoRow flat icon="fitness-outline" title="Squash" detail="Dodatkowy" />
+          {store.sports.length ? store.sports.map((sport, index) => (
+            <React.Fragment key={sport.id}>
+              <InfoRow
+                flat
+                icon={sport.code === 'tennis' ? 'tennisball' : 'fitness-outline'}
+                title={sport.name}
+                detail={sport.name === store.selectedSport ? 'Główny' : 'Dostępny'}
+              />
+              {index < store.sports.length - 1 ? <Divider inset={40} /> : null}
+            </React.Fragment>
+          )) : (
+            <InfoRow flat icon="tennisball-outline" title="Brak aktywnych sportów" detail="Skontaktuj się z administratorem" />
+          )}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <SectionTitle title="Role i uprawnienia" />
+        <View>
+          {store.accountRoles.map((role, index) => (
+            <React.Fragment key={role}>
+              <InfoRow
+                flat
+                icon={role === 'player' ? 'person-outline' : role === 'trainer' ? 'school-outline' : 'shield-checkmark-outline'}
+                title={roleNames[role] ?? role}
+                detail={role === 'player' ? 'Konto użytkownika' : 'Uprawnienia nadane przez organizację'}
+              />
+              {index < store.accountRoles.length - 1 ? <Divider inset={40} /> : null}
+            </React.Fragment>
+          ))}
         </View>
       </View>
 
@@ -146,20 +211,40 @@ export default function ProfileScreen() {
         <View style={styles.progressContent}>
           <View style={styles.progressSummary}>
             <View>
-              <Text style={styles.progressValue}>65</Text>
+              <Text style={styles.progressValue}>{completedTrainings.length}</Text>
               <Text style={styles.progressLabel}>Treningi</Text>
             </View>
-            <View style={styles.trendValue}><Ionicons name="trending-up" size={15} color={theme.colors.accentText} /><Text style={styles.trendText}>18%</Text></View>
+            <View style={styles.trendValue}><Ionicons name="stats-chart-outline" size={15} color={theme.colors.accentText} /><Text style={styles.trendText}>z bazy</Text></View>
           </View>
           <View style={styles.chart}>
-            {[24, 38, 32, 52, 40, 62, 56, 78, 64, 84, 73, 91, 80].map((height, index) => <View key={index} style={[styles.bar, { height }]} />)}
+            {weeklyTrainingCounts.map((count, index) => (
+              <View key={index} style={[styles.bar, { height: Math.max(3, Math.round((count / maxWeeklyCount) * 91)) }]} />
+            ))}
           </View>
           <View style={styles.progressRows}>
-            <ProgressRow icon="time-outline" title="Czas na korcie" value="6 420 min" />
-            <ProgressRow icon="people-outline" title="Partnerzy" value="12 osób" />
-            <ProgressRow icon="location-outline" title="Kluby" value="4 miejsca" />
+            <ProgressRow icon="time-outline" title="Czas na korcie" value={`${totalMinutes.toLocaleString('pl-PL')} min`} />
+            <ProgressRow icon="people-outline" title="Partnerzy" value={`${partnerCount} os.`} />
+            <ProgressRow icon="location-outline" title="Kluby" value={`${venueCount} miejsc`} />
           </View>
         </View>
+      </View>
+
+      <View style={styles.section}>
+        <SectionTitle title="Konto" />
+        <InfoRow
+          flat
+          icon="log-out-outline"
+          title="Wyloguj się"
+          detail="Zakończ sesję na tym urządzeniu"
+          onPress={() => {
+            void signOut().catch((error: unknown) => {
+              Alert.alert(
+                'Nie udało się wylogować',
+                error instanceof Error ? error.message : 'Spróbuj ponownie.',
+              );
+            });
+          }}
+        />
       </View>
     </Screen>
   );
