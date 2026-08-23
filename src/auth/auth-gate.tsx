@@ -19,6 +19,7 @@ import { useAuth } from './auth-provider';
 
 export type AuthMode = 'signIn' | 'signUp' | 'reset';
 type Notice = { type: 'error' | 'success'; text: string } | null;
+const webHeadingFocusProps = Platform.OS === 'web' ? { tabIndex: -1 as const } : {};
 
 function useStyles() {
   return useThemeStyles(createStyles);
@@ -376,10 +377,10 @@ export function AuthScreen({
 
             <View style={styles.heading}>
               <Text
+                {...webHeadingFocusProps}
                 ref={headingRef}
                 accessibilityRole="header"
                 aria-level={1}
-                tabIndex={-1}
                 style={styles.title}>
                 {title}
               </Text>
