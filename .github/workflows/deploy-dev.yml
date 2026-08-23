@@ -68,7 +68,11 @@ jobs:
 
       - name: Reject local or placeholder configuration
         run: |
-          if grep -R -q -E "127\.0\.0\.1:54321|replace-with-project-publishable-key|sb_secret_" dist; then
+          # The official Supabase SDK contains the literal `sb_secret_` in its
+          # key-type validator. Match a full secret-shaped value instead of the
+          # harmless prefix so this guard catches leaks without rejecting the
+          # SDK itself.
+          if grep -R -q -E "127\.0\.0\.1:54321|replace-with-project-publishable-key|sb_secret_[A-Za-z0-9_-]{20,}" dist; then
             echo "The exported bundle contains local, placeholder or secret Supabase configuration" >&2
             exit 1
           fi
@@ -167,7 +171,7 @@ jobs:
           test -s "$release/trainer/[id].html"
           test -n "$(find "$release/_expo/static/js" -type f -size +0c -print -quit)"
           grep -RqsF 'https://phvcbbqshdecbsizxqjw.supabase.co' "$release/_expo/static/js"
-          ! grep -RqsE '127\.0\.0\.1:54321|replace-with-project-publishable-key|sb_secret_' "$release"
+          ! grep -RqsE '127\.0\.0\.1:54321|replace-with-project-publishable-key|sb_secret_[A-Za-z0-9_-]{20,}' "$release"
           REMOTE
 
       - name: Activate atomically and smoke-test origin
