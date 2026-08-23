@@ -124,7 +124,9 @@ validate_release() {
   grep -Fq "\"github_sha\":\"$expected_github_sha\"" "$release/.release.json"
   grep -Fq "\"release_id\":\"$release_id\"" "$release/.release.json"
   grep -RqsF 'https://phvcbbqshdecbsizxqjw.supabase.co' "$release/_expo/static/js"
-  if grep -RqsE '127\.0\.0\.1:54321|replace-with-project-publishable-key|sb_secret_' "$release"; then
+  # Supabase JS contains the bare `sb_secret_` prefix in its own validator.
+  # Reject only values long enough to be complete secret keys.
+  if grep -RqsE '127\.0\.0\.1:54321|replace-with-project-publishable-key|sb_secret_[A-Za-z0-9_-]{20,}' "$release"; then
     echo "The release contains local, placeholder or secret Supabase configuration." >&2
     return 1
   fi
