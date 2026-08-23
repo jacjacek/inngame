@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { PropsWithChildren, useState } from 'react';
+import React, { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -17,7 +17,7 @@ import { AppTheme, useThemeStyles } from '@/theme';
 
 import { useAuth } from './auth-provider';
 
-type AuthMode = 'signIn' | 'signUp' | 'reset';
+export type AuthMode = 'signIn' | 'signUp' | 'reset';
 type Notice = { type: 'error' | 'success'; text: string } | null;
 
 function useStyles() {
@@ -68,7 +68,7 @@ export function AuthGate({ children }: PropsWithChildren) {
   return <>{children}</>;
 }
 
-function PasswordRecoveryScreen() {
+export function PasswordRecoveryScreen() {
   const { styles, theme } = useStyles();
   const { finishPasswordRecovery, signOut, updatePassword, user } = useAuth();
   const [password, setPassword] = useState('');
@@ -125,7 +125,7 @@ function PasswordRecoveryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView role="main" style={styles.screen}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}>
@@ -142,7 +142,7 @@ function PasswordRecoveryScreen() {
             </View>
 
             <View style={styles.heading}>
-              <Text style={styles.title}>
+              <Text accessibilityRole="header" aria-level={1} style={styles.title}>
                 {passwordUpdated ? 'Hasło zmienione' : 'Ustaw nowe hasło'}
               </Text>
               <Text style={styles.subtitle}>
@@ -221,15 +221,15 @@ function PasswordRecoveryScreen() {
   );
 }
 
-function ConfigurationError({ message }: { message: string | null }) {
+export function ConfigurationError({ message }: { message: string | null }) {
   const { styles, theme } = useStyles();
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView role="main" style={styles.screen}>
       <View style={styles.centeredContent}>
         <View style={[styles.brandMark, styles.errorMark]}>
           <Ionicons name="settings-outline" size={28} color={theme.colors.danger} />
         </View>
-        <Text style={styles.title}>Aplikacja wymaga konfiguracji</Text>
+        <Text accessibilityRole="header" aria-level={1} style={styles.title}>Aplikacja wymaga konfiguracji</Text>
         <Text style={styles.subtitle}>
           {message ?? 'Nie udało się uruchomić połączenia z Supabase.'}
         </Text>
@@ -243,19 +243,36 @@ function ConfigurationError({ message }: { message: string | null }) {
   );
 }
 
-function AuthScreen() {
+export function AuthScreen({
+  initialMode = 'signIn',
+  mode: controlledMode,
+  onBack,
+  onModeChange,
+}: {
+  initialMode?: Exclude<AuthMode, 'reset'>;
+  mode?: Exclude<AuthMode, 'reset'>;
+  onBack?: () => void;
+  onModeChange?: (mode: Exclude<AuthMode, 'reset'>) => void;
+}) {
   const { styles, theme } = useStyles();
   const { signIn, signUp, resetPassword } = useAuth();
-  const [mode, setMode] = useState<AuthMode>('signIn');
+  const [localMode, setLocalMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
+  const headingRef = useRef<Text>(null);
+  const mode = localMode === 'reset' ? 'reset' : (controlledMode ?? localMode);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') headingRef.current?.focus();
+  }, [mode]);
 
   const selectMode = (nextMode: AuthMode) => {
-    setMode(nextMode);
+    setLocalMode(nextMode);
     setNotice(null);
     if (nextMode === 'reset') setPassword('');
+    else onModeChange?.(nextMode);
   };
 
   const submit = async () => {
@@ -294,7 +311,7 @@ function AuthScreen() {
 
     if (mode === 'signUp' && result.requiresEmailConfirmation) {
       setPassword('');
-      setMode('signIn');
+      selectMode('signIn');
       setNotice({
         type: 'success',
         text: 'Konto zostało utworzone. Sprawdź pocztę i potwierdź adres e-mail.',
@@ -314,7 +331,7 @@ function AuthScreen() {
       : 'Zaloguj się, aby przejść do treningów, kalendarza i czatu.';
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView role="main" style={styles.screen}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}>
@@ -329,6 +346,18 @@ function AuthScreen() {
               </View>
               <Text style={styles.brandName}>MyMovio</Text>
             </View>
+
+            {onBack ? (
+              <Pressable
+                accessibilityLabel="Wróć na stronę główną"
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={onBack}
+                style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+                <Ionicons name="arrow-back" size={16} color={theme.colors.secondaryText} />
+                <Text style={styles.backButtonLabel}>Wróć na stronę</Text>
+              </Pressable>
+            ) : null}
 
             {mode !== 'reset' ? (
               <View accessibilityRole="tablist" style={styles.modeSelector}>
@@ -346,7 +375,14 @@ function AuthScreen() {
             ) : null}
 
             <View style={styles.heading}>
-              <Text style={styles.title}>{title}</Text>
+              <Text
+                ref={headingRef}
+                accessibilityRole="header"
+                aria-level={1}
+                tabIndex={-1}
+                style={styles.title}>
+                {title}
+              </Text>
               <Text style={styles.subtitle}>{description}</Text>
             </View>
 
@@ -454,12 +490,13 @@ function ModeButton({ active, label, onPress }: { active: boolean; label: string
   );
 }
 
-function AuthField({ label, ...props }: React.ComponentProps<typeof TextInput> & { label: string }) {
+function AuthField({ label, accessibilityLabel, ...props }: React.ComponentProps<typeof TextInput> & { label: string }) {
   const { styles, theme } = useStyles();
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
+        accessibilityLabel={accessibilityLabel ?? label}
         placeholderTextColor={theme.colors.tertiaryText}
         selectionColor={theme.colors.lime}
         style={styles.field}
@@ -515,6 +552,14 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   },
   errorMark: { backgroundColor: theme.colors.dangerSoft },
   brandName: { color: theme.colors.text, fontSize: 22, fontWeight: '700', letterSpacing: -0.5 },
+  backButton: {
+    minHeight: 32,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  backButtonLabel: { color: theme.colors.secondaryText, fontSize: 13, fontWeight: '600' },
   modeSelector: {
     flexDirection: 'row',
     gap: 4,

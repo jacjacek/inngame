@@ -4,8 +4,8 @@ import { useEffect, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { AuthGate } from '@/auth/auth-gate';
 import { AuthProvider } from '@/auth/auth-provider';
+import { WebAuthGate } from '@/auth/web-auth-gate';
 import { AppStoreProvider, useAppStore } from '@/state/app-store';
 import { AppThemeProvider, themes } from '@/theme';
 
@@ -62,7 +62,7 @@ function ThemedNavigation() {
     <AppThemeProvider value={theme}>
       <ThemeProvider value={navigationTheme}>
         <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} />
-        <AuthGate>
+        <WebAuthGate>
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background }, animation: 'default' }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="booking" options={sheetOptions} />
@@ -78,7 +78,7 @@ function ThemedNavigation() {
             <Stack.Screen name="training-note" options={sheetOptions} />
             <Stack.Screen name="availability-preferences" options={sheetOptions} />
           </Stack>
-        </AuthGate>
+        </WebAuthGate>
       </ThemeProvider>
     </AppThemeProvider>
   );

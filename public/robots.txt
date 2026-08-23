@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /*?auth=
+Disallow: /availability-preferences
+Disallow: /booking
+Disallow: /chat
+Disallow: /edit-profile
+Disallow: /notifications
+Disallow: /profile-form
+Disallow: /schedule
+Disallow: /settings
+Disallow: /sport-picker
+Disallow: /tennis-level
+Disallow: /trainer/
+Disallow: /trainers
+Disallow: /training/
+Disallow: /training-note
+
+Sitemap: https://tenis.walasek.xyz/sitemap.xml
