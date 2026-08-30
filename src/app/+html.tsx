@@ -78,7 +78,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
             margin-right: -28px;
             padding-left: 28px;
             padding-right: 28px;
-            background: ${background};
+            background-color: ${background} !important;
             box-shadow: 0 1px 0 rgba(7,16,10,0.10);
           }
           #jak-to-dziala, #funkcje, #dlaczego { scroll-margin-top: 104px; }
