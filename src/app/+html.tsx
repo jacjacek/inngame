@@ -68,6 +68,20 @@ export default function RootHtml({ children }: PropsWithChildren) {
           html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
           body { margin: 0; overflow: hidden; overscroll-behavior: none; background: ${background}; }
           #root { display: flex; min-height: 100%; }
+          [data-landing="header"] {
+            position: sticky !important;
+            top: 0;
+            z-index: 50;
+            margin-left: -28px;
+            margin-right: -28px;
+            padding-left: 28px;
+            padding-right: 28px;
+            border-bottom: 1px solid rgba(7,16,10,0.08);
+            background: rgba(247,248,243,0.90);
+            -webkit-backdrop-filter: blur(18px) saturate(150%);
+            backdrop-filter: blur(18px) saturate(150%);
+          }
+          #jak-to-dziala, #funkcje, #dlaczego { scroll-margin-top: 104px; }
 
           @media (max-width: 1059px) {
             [data-landing="nav"] { display: none !important; }
@@ -92,7 +106,7 @@ export default function RootHtml({ children }: PropsWithChildren) {
 
           @media (max-width: 699px) {
             [data-landing="shell"] { padding-left: 14px !important; padding-right: 14px !important; }
-            [data-landing="header"] { min-height: 76px !important; }
+            [data-landing="header"] { min-height: 76px !important; margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px; }
             [data-landing="header-login"] { display: none !important; }
             [data-landing="header-cta"] { min-height: 42px !important; padding-left: 15px !important; padding-right: 15px !important; }
             [data-landing="hero-copy"] { min-height: 0 !important; padding: 48px 22px !important; }
