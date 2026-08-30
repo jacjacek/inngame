@@ -68,18 +68,18 @@ export default function RootHtml({ children }: PropsWithChildren) {
           html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
           body { margin: 0; overflow: hidden; overscroll-behavior: none; background: ${background}; }
           #root { display: flex; min-height: 100%; }
+          [data-landing="shell"] { isolation: isolate; }
           [data-landing="header"] {
             position: sticky !important;
             top: 0;
-            z-index: 50;
+            z-index: 1000 !important;
+            isolation: isolate;
             margin-left: -28px;
             margin-right: -28px;
             padding-left: 28px;
             padding-right: 28px;
-            border-bottom: 1px solid rgba(7,16,10,0.08);
-            background: rgba(247,248,243,0.90);
-            -webkit-backdrop-filter: blur(18px) saturate(150%);
-            backdrop-filter: blur(18px) saturate(150%);
+            background: ${background};
+            box-shadow: 0 1px 0 rgba(7,16,10,0.10);
           }
           #jak-to-dziala, #funkcje, #dlaczego { scroll-margin-top: 104px; }
 
